@@ -1,0 +1,230 @@
+//
+// Created by Xomagat on 15.09.2026.
+//
+
+#include "Parser.h"
+
+// vars
+
+// funcs
+Parser::Parser(std::vector<Token> tokens)
+{
+    eof = Token(token_type::eof, "");
+
+    this->tokens = tokens;
+
+    size = tokens.size();
+
+    pos = 0;
+}
+
+std::vector<std::unique_ptr<Statement>> Parser::parse()
+{
+    std::vector<std::unique_ptr<Statement>> result;
+
+    while (!match(token_type::eof))
+    {
+        result.push_back(statement());
+    }
+
+    return result;
+}
+
+std::unique_ptr<Statement> Parser::statement()
+{
+    switch (get(0).get_type())
+    {
+        case token_type::SHOW: {
+            consume(token_type::SHOW);
+            consume(token_type::LPARENT);
+            std::unique_ptr<Expression> expr = expression();
+            consume(token_type::RPARENT);
+            return std::make_unique<ShowStatement>(std::move(expr));
+        }
+        case token_type::NUMB:
+        case token_type::STRING:
+        case token_type::LOGIC:
+            return assigment_statement();
+
+        default: {
+            throw std::runtime_error("Неопределенный токен: " + token_string[get(0).get_type()]);
+        }
+    }
+}
+
+bool type_check(token_type type)
+{
+    switch (type)
+    {
+        case token_type::NUMB:
+        case token_type::STRING:
+        case token_type::LOGIC:
+            return true;
+    }
+
+    return false;
+}
+
+std::unique_ptr<Statement> Parser::assigment_statement()
+{
+    // type name = 33 or type name
+    Token current = get(0);
+
+    if (type_check(current.get_type()) && get(1).get_type() == token_type::WORDS)
+    {
+        std::string type = consume(token_type::NUMB).get_text();
+        std::string name = consume(token_type::WORDS).get_text();
+        std::unique_ptr<Expression> expr;
+
+        if (match(token_type::EQ))
+            expr = expression();
+        else
+            expr = std::make_unique<ValueExpression>(nullptr);
+
+        return std::make_unique<AssignmentStatement>(type, name, std::move(expr));
+    }
+    else if (current.get_type() == token_type::WORDS && get(1).get_type() == token_type::EQ)
+    {
+        std::string name = consume(token_type::WORDS).get_text();
+        consume(token_type::EQ);
+
+        std::unique_ptr<Expression> expr = expression();
+
+        return std::make_unique<AssignmentStatement>("", name, std::move(expr));
+    }
+
+    throw std::runtime_error("При объявлении переменной, было пропущено имя или тип!");
+}
+
+std::unique_ptr<Expression> Parser::expression()
+{
+    return additive();
+}
+
+std::unique_ptr<Expression> Parser::additive()
+{
+
+    std::unique_ptr<Expression> expr = multiply();
+
+    while (true)
+    {
+        if (match(token_type::PLUS))
+        {
+            expr = std::make_unique<BinExpression>('+', std::move(expr), multiply());
+            continue;
+        }
+        if (match(token_type::MINUS))
+        {
+            expr = std::make_unique<BinExpression>('-', std::move(expr), multiply());
+            continue;
+        }
+        break;
+    }
+
+
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::multiply()
+{
+    std::unique_ptr<Expression> expr = pow();
+
+    while (true)
+    {
+        if (match(token_type::MULT))
+        {
+            expr = std::make_unique<BinExpression>('*', std::move(expr), pow());
+            continue;
+        }
+        if (match(token_type::DIV))
+        {
+            expr = std::make_unique<BinExpression>('/', std::move(expr), pow());
+            continue;
+        }
+        break;
+    }
+
+
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::pow()
+{
+    std::unique_ptr<Expression> expr = unary();
+
+    while (true)
+    {
+        if (match(token_type::POW))
+        {
+            expr = std::make_unique<BinExpression>('p', std::move(expr), unary());
+            continue;
+        }
+        break;
+    }
+
+
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::unary()
+{
+    if (match(token_type::MINUS))
+        return std::make_unique<UnaryExpression>('-', std::move(primary()));
+    if (match(token_type::PLUS))
+        return std::make_unique<UnaryExpression>('+', std::move(primary()));
+
+    return primary();
+}
+
+std::unique_ptr<Expression> Parser::primary()
+{
+    Token current = get(0);
+
+    if (match(token_type::NUMBER))
+    {
+        return std::make_unique<ValueExpression>(std::stod(current.get_text()));
+    }
+    if (match(token_type::TEXT))
+        return std::make_unique<ValueExpression>(current.get_text());
+    if (match(token_type::WORDS))
+        return std::make_unique<VariableExpression>(current.get_text());
+    if (match(token_type::LPARENT))
+    {
+        std::unique_ptr<Expression> result = expression();
+        match(token_type::RPARENT);
+        return result;
+    }
+
+    throw std::runtime_error("Неизвестное выражение! " + current.get_text());
+}
+
+Token Parser::get(int relative_position)
+{
+    int position = pos + relative_position;
+    if (position >= size)
+        return eof;
+
+    return tokens[position];
+}
+
+bool Parser::match(token_type type)
+{
+    Token t = get(0);
+
+    if (type != t.get_type())
+        return false;
+
+    pos++;
+    return true;
+}
+
+Token Parser::consume(token_type type)
+{
+    Token t = get(0);
+
+    if (type != t.get_type())
+        throw std::runtime_error("Слово " + token_string[t.get_type()] + " не совпадает " + token_string[type]);
+
+    pos++;
+    return t;
+}
