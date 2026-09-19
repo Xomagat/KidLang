@@ -16,6 +16,9 @@ enum token_type
 
     // keywords
     SHOW,
+    IF,
+    ELIF,
+    ELSE,
     NUMB,
     STRING,
     LOGIC,
@@ -29,18 +32,31 @@ enum token_type
     DIV,
     POW,
     EQ,
+    LT,
+    GT,
+    NOT,
+    EQEQ,
+    NOEQ,
+    LTEQ,
+    GTEQ,
     LPARENT,
     RPARENT,
+
+    INDENT,
+    DEDENT,
 
     eof
 };
 
 inline std::unordered_map<token_type, std::string> token_string = {
     {NUMBER, "цифорка"}, {WORDS, "слово"}, {TEXT, "текст"},
-    {SHOW, "покажи"}, {NUMB, "число"}, {STRING, "текст"},
+    {SHOW, "покажи"}, {IF, "если"}, {ELIF, "может"},
+    {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
     {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"},
     {PLUS, "+"}, {MINUS, "-"}, {MULT, "*"}, {DIV, "/"}, {POW, "**"}, {EQ, "="},
-    {LPARENT, "("}, {RPARENT, ")"},
+    {EQEQ, "=="}, {NOEQ, "!="}, {GT, ">"}, {LT, "<"}, {GTEQ, ">="}, {LTEQ, "<="},
+    {LPARENT, "("}, {RPARENT, ")"}, {NOT, "!"},
+    {INDENT, "<отступ>"}, {DEDENT, "<конец отступа>"},
     {eof, "<конец файла>"}
 };
 

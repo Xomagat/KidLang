@@ -15,11 +15,13 @@
 #include "AST/BinExpression.h"
 #include "AST/ValueExpression.h"
 #include "AST/UnaryExpression.h"
+#include "AST/ConditionalExpression.h"
 #include "AST/VariablesExpression.h"
 #include "AST/Expression.h"
 
 #include "AST/AssignmentStatement.h"
 #include "AST/IOStatement.h"
+#include "AST/IfStatement.h"
 #include "AST/Statement.h"
 
 class Parser
@@ -37,8 +39,14 @@ private:
 
     std::unique_ptr<Statement> statement();
     std::unique_ptr<Statement> assigment_statement();
+    std::unique_ptr<Statement> if_else();
 
     std::unique_ptr<Expression> expression();
+
+    std::unique_ptr<Expression> equality();
+
+    std::unique_ptr<Expression> conditional();
+
     std::unique_ptr<Expression> additive();
     std::unique_ptr<Expression> multiply();
     std::unique_ptr<Expression> pow();

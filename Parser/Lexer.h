@@ -17,8 +17,10 @@
 class Lexer
 {
 private:
+    std::vector<int> indent_stack{0};
+
     std::u32string OPERATION_CHARS;
-    std::unordered_map<char32_t, token_type> SINGLE_OPERATORS;
+    std::unordered_map<std::u32string, token_type> SINGLE_OPERATORS;
 
     std::u32string code;        // декодированный код (code points, не байты)
     std::vector<Token> tokens;  // tokens
@@ -44,6 +46,7 @@ private:
     void tokenize_string();
     void tokenize_operation();
     void tokenize_word();
+    void handle_indentation();
 
 public:
     explicit Lexer(const std::string& code);

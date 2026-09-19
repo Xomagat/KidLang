@@ -30,6 +30,18 @@ std::vector<std::unique_ptr<Statement>> Parser::parse()
     return result;
 }
 
+std::vector<std::unique_ptr<Statement>> Parser::block()
+{
+    std::vector<std::unique_ptr<Statement>> result;
+
+    consume(token_type::INDENT);
+
+    while (!match(token_type::DEDENT) && !match(token_type::eof))
+        result.push_back(statement());
+
+    return result;
+}
+
 std::unique_ptr<Statement> Parser::statement()
 {
     switch (get(0).get_type())
@@ -41,9 +53,17 @@ std::unique_ptr<Statement> Parser::statement()
             consume(token_type::RPARENT);
             return std::make_unique<ShowStatement>(std::move(expr));
         }
+        case token_type::IF: {
+            consume(token_type::IF);
+            return if_else();
+        }
+
         case token_type::NUMB:
         case token_type::STRING:
         case token_type::LOGIC:
+            return assigment_statement();
+
+        case token_type::WORDS:
             return assigment_statement();
 
         default: {
@@ -72,7 +92,7 @@ std::unique_ptr<Statement> Parser::assigment_statement()
 
     if (type_check(current.get_type()) && get(1).get_type() == token_type::WORDS)
     {
-        std::string type = consume(token_type::NUMB).get_text();
+        std::string type = consume(current.get_type()).get_text();
         std::string name = consume(token_type::WORDS).get_text();
         std::unique_ptr<Expression> expr;
 
@@ -96,9 +116,86 @@ std::unique_ptr<Statement> Parser::assigment_statement()
     throw std::runtime_error("При объявлении переменной, было пропущено имя или тип!");
 }
 
+std::unique_ptr<Statement> Parser::if_else()
+{
+    std::vector<IfBranch> branches;
+
+    std::unique_ptr<Expression> cond = expression();
+    branches.push_back({std::move(cond), block()});
+
+    while (match(token_type::ELIF))
+    {
+        std::unique_ptr<Expression> elif_cond = expression();
+        branches.push_back({std::move(elif_cond), block()});
+    }
+
+    std::vector<std::unique_ptr<Statement>> else_body;
+    if (match(token_type::ELSE))
+        else_body = block();
+
+    return std::make_unique<IfStatement>(std::move(branches), std::move(else_body));
+}
+
 std::unique_ptr<Expression> Parser::expression()
 {
-    return additive();
+    return equality();
+}
+
+std::unique_ptr<Expression> Parser::equality()
+{
+    std::unique_ptr<Expression> expr = conditional();
+
+    while (true)
+    {
+        if (match(token_type::EQEQ))
+        {
+            expr = std::make_unique<ConditionalExpression>("==", std::move(expr), conditional());
+            continue;
+        }
+        if (match(token_type::NOEQ))
+        {
+            expr = std::make_unique<ConditionalExpression>("!=", std::move(expr), conditional());
+            continue;
+        }
+        break;
+    }
+
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::conditional()
+{
+    std::unique_ptr<Expression> expr = additive();
+
+
+
+    while (true)
+    {
+        if (match(token_type::GTEQ))
+        {
+            expr = std::make_unique<ConditionalExpression>(">=", std::move(expr), additive());
+            continue;
+        }
+        if (match(token_type::LTEQ))
+        {
+            expr = std::make_unique<ConditionalExpression>("<=", std::move(expr), additive());
+            continue;
+        }
+        if (match(token_type::GT))
+        {
+            expr = std::make_unique<ConditionalExpression>(">", std::move(expr), additive());
+            continue;
+        }
+        if (match(token_type::LT))
+        {
+            expr = std::make_unique<ConditionalExpression>("<", std::move(expr), additive());
+            continue;
+        }
+        break;
+    }
+
+
+    return expr;
 }
 
 std::unique_ptr<Expression> Parser::additive()
@@ -223,7 +320,7 @@ Token Parser::consume(token_type type)
     Token t = get(0);
 
     if (type != t.get_type())
-        throw std::runtime_error("Слово " + token_string[t.get_type()] + " не совпадает " + token_string[type]);
+        throw std::runtime_error("Слово " + token_string[t.get_type()] + " не совпадает c " + token_string[type]);
 
     pos++;
     return t;

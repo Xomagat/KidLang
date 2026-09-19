@@ -4,23 +4,32 @@
 
 #include "Lexer.h"
 
+#include <algorithm>
+
 // vars
 
 // funcs
 Lexer::Lexer(const std::string& source)
 {
-    OPERATION_CHARS = U"+-*/=()";
+    OPERATION_CHARS = U"+-*/=!()";
     SINGLE_OPERATORS = {
-        {U'+', token_type::PLUS},
-        {U'-', token_type::MINUS},
-        {U'*', token_type::MULT},
-        {U'/', token_type::DIV},
-        {U'=', token_type::EQ},
-        {U'(', token_type::LPARENT},
-        {U')', token_type::RPARENT},
+        {U"+",  token_type::PLUS},
+        {U"-",  token_type::MINUS},
+        {U"*",  token_type::MULT},
+        {U"/",  token_type::DIV},
+        {U"=",  token_type::EQ},
+        {U"!",  token_type::NOT},
+        {U"(",  token_type::LPARENT},
+        {U")",  token_type::RPARENT},
+        {U">",  token_type::GT},
+        {U"<",  token_type::LT},
+        {U"==", token_type::EQEQ},
+        {U"!=", token_type::NOEQ},
+        {U">=", token_type::GTEQ},
+        {U"<=", token_type::LTEQ},
     };
 
-    code = decode_utf8(source);   // тут и происходит настоящее декодирование UTF-8
+    code = decode_utf8(source);
 
     length = static_cast<int>(code.size());
     pos = 0;
@@ -30,17 +39,13 @@ Lexer::Lexer(const std::string& source)
 
 std::vector<Token> Lexer::tokenize()
 {
+    handle_indentation();
+
     while (pos < length)
     {
         char32_t current = peek(0);
 
-        if (current == U'\n' || current == U' ')
-        {
-            line++;
-            next();
-            continue;
-        }
-        if (current == U' ')
+        if (current == U' ' || current == U'\t')
         {
             next();
             continue;
@@ -52,6 +57,14 @@ std::vector<Token> Lexer::tokenize()
             continue;
         }
 
+        if (current == U'\n')
+        {
+            next();
+            line++;
+            handle_indentation();
+            continue;
+        }
+
         if (current == U'"')
             tokenize_string();
         else if (is_digit(current))
@@ -60,6 +73,12 @@ std::vector<Token> Lexer::tokenize()
             tokenize_word();
         else if (OPERATION_CHARS.find(current) != std::u32string::npos)
             tokenize_operation();
+    }
+
+    while (indent_stack.size() > 1)
+    {
+        indent_stack.pop_back();
+        add_token(token_type::DEDENT);
     }
 
     return tokens;
@@ -85,6 +104,53 @@ void Lexer::tokenize_number()
     }
 
     add_token(token_type::NUMBER, buffer);
+}
+
+void Lexer::handle_indentation()
+{
+    while (true)
+    {
+        int indent = 0;
+
+        while (peek(0) == U' ' || peek(0) == U'\t')
+        {
+            indent += (peek(0) == U'\t') ? 4 : 1;
+            next();
+        }
+
+        if (peek(0) == U'\r')
+        {
+            next();
+            continue;
+        }
+        if (peek(0) == U'\n')
+        {
+            next();
+            line++;
+            continue;
+        }
+        if (pos >= length)
+            return;
+
+        if (indent > indent_stack.back())
+        {
+            indent_stack.push_back(indent);
+            add_token(token_type::INDENT);
+        }
+        else
+        {
+            while (indent < indent_stack.back())
+            {
+                indent_stack.pop_back();
+                add_token(token_type::DEDENT);
+            }
+
+            if (indent != indent_stack.back())
+                throw std::runtime_error("Ошибка отступа в строке " + std::to_string(line) + "! Отступы должны совпадать.");
+        }
+
+        return;
+    }
 }
 
 void Lexer::tokenize_string()
@@ -121,26 +187,24 @@ void Lexer::tokenize_string()
 
 void Lexer::tokenize_operation()
 {
-    char32_t one = peek(0);
-    char32_t two = peek(1);
+    std::u32string one(1, peek(0));
+    std::u32string two = one + peek(1);
 
-    // "**" — единственный двухсимвольный оператор
-    if (one == U'*' && two == U'*')
+    if (SINGLE_OPERATORS.contains(two))
     {
-        add_token(token_type::POW);
+        add_token(SINGLE_OPERATORS.at(two));
         next(); next();
         return;
     }
 
-    auto it = SINGLE_OPERATORS.find(one);
-    if (it != SINGLE_OPERATORS.end())
+    if (SINGLE_OPERATORS.contains(one))
     {
-        add_token(it->second);
+        add_token(SINGLE_OPERATORS.at(one));
         next();
         return;
     }
 
-    throw std::runtime_error("Ой, я не знаю: " + encode_utf8(std::u32string(1, one)) + "! Ты уверен, что написал правильно?");
+    throw std::runtime_error("Ой, я не знаю: " + encode_utf8(one) + "! Ты уверен, что написал правильно?");
 }
 
 void Lexer::tokenize_word()
@@ -158,6 +222,9 @@ void Lexer::tokenize_word()
 
     static const std::unordered_map<std::u32string, token_type> keywords = {
         {U"покажи", token_type::SHOW},
+        {U"если",   token_type::IF},
+        {U"может",  token_type::ELIF},
+        {U"иначе",  token_type::ELSE},
         {U"число",  token_type::NUMB},
         {U"текст",  token_type::STRING},
         {U"ответ",  token_type::LOGIC},
