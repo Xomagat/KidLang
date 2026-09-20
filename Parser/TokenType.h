@@ -19,6 +19,8 @@ enum token_type
     IF,
     ELIF,
     ELSE,
+    REPEAT,
+    ONCE,
     NUMB,
     STRING,
     LOGIC,
@@ -51,6 +53,7 @@ enum token_type
 inline std::unordered_map<token_type, std::string> token_string = {
     {NUMBER, "цифорка"}, {WORDS, "слово"}, {TEXT, "текст"},
     {SHOW, "покажи"}, {IF, "если"}, {ELIF, "может"},
+    {REPEAT, "повтори"}, {ONCE, "раз/раза"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
     {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"},
     {PLUS, "+"}, {MINUS, "-"}, {MULT, "*"}, {DIV, "/"}, {POW, "**"}, {EQ, "="},

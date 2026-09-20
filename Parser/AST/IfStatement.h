@@ -22,29 +22,45 @@ struct IfBranch
 class IfStatement : public Statement
 {
 private:
-    std::vector<IfBranch> branches;
-    std::vector<std::unique_ptr<Statement>> else_body;
+    std::vector<std::pair<std::unique_ptr<Expression>, std::unique_ptr<Statement>>> branches;
+    std::unique_ptr<Statement> else_body;
 
 public:
-    IfStatement(std::vector<IfBranch> branches, std::vector<std::unique_ptr<Statement>> else_body)
+    IfStatement(std::vector<std::pair<std::unique_ptr<Expression>, std::unique_ptr<Statement>>> branches,
+                std::unique_ptr<Statement> else_body)
         : branches(std::move(branches)), else_body(std::move(else_body)) {}
 
     void execute(Environment& env) const override
     {
-        for (const auto& branch : branches)
+        for (const auto& [condition, body] : branches)
         {
-            if (branch.condition->eval(env)->as_bool())
+            if (condition->eval(env)->as_bool())
             {
-                Environment scope(&env);
-                for (const auto& stmt : branch.body)
-                    stmt->execute(scope);
+                body->execute(env); // BlockStatement сам создаёт свой scope
                 return;
             }
         }
 
-        Environment scope(&env);
-        for (const auto& stmt : else_body)
-            stmt->execute(scope);
+        if (else_body)
+            else_body->execute(env);
+    }
+};
+
+class BlockStatement : public Statement
+{
+private:
+    std::vector<std::unique_ptr<Statement>> statements;
+
+public:
+    explicit BlockStatement(std::vector<std::unique_ptr<Statement>> statements) : statements(std::move(statements)) {}
+
+    void execute(Environment& env) const override
+    {
+        Environment local(&env);
+        for (auto& s : statements)
+        {
+            s->execute(local);
+        }
     }
 };
 

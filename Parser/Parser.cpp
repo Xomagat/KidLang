@@ -30,16 +30,16 @@ std::vector<std::unique_ptr<Statement>> Parser::parse()
     return result;
 }
 
-std::vector<std::unique_ptr<Statement>> Parser::block()
+std::unique_ptr<Statement> Parser::block()
 {
-    std::vector<std::unique_ptr<Statement>> result;
+    std::vector<std::unique_ptr<Statement>> statements;
 
     consume(token_type::INDENT);
 
     while (!match(token_type::DEDENT) && !match(token_type::eof))
-        result.push_back(statement());
+        statements.push_back(statement());
 
-    return result;
+    return std::make_unique<BlockStatement>(std::move(statements));
 }
 
 std::unique_ptr<Statement> Parser::statement()
@@ -56,6 +56,10 @@ std::unique_ptr<Statement> Parser::statement()
         case token_type::IF: {
             consume(token_type::IF);
             return if_else();
+        }
+        case token_type::REPEAT: {
+            consume(token_type::REPEAT);
+            return repeat_statement();
         }
 
         case token_type::NUMB:
@@ -118,22 +122,32 @@ std::unique_ptr<Statement> Parser::assigment_statement()
 
 std::unique_ptr<Statement> Parser::if_else()
 {
-    std::vector<IfBranch> branches;
+    std::vector<std::pair<std::unique_ptr<Expression>, std::unique_ptr<Statement>>> branches;
 
     std::unique_ptr<Expression> cond = expression();
-    branches.push_back({std::move(cond), block()});
+    branches.emplace_back(std::move(cond), block());
 
     while (match(token_type::ELIF))
     {
         std::unique_ptr<Expression> elif_cond = expression();
-        branches.push_back({std::move(elif_cond), block()});
+        branches.emplace_back(std::move(elif_cond), block());
     }
 
-    std::vector<std::unique_ptr<Statement>> else_body;
+    std::unique_ptr<Statement> else_body;
     if (match(token_type::ELSE))
         else_body = block();
 
     return std::make_unique<IfStatement>(std::move(branches), std::move(else_body));
+}
+
+std::unique_ptr<Statement> Parser::repeat_statement()
+{
+    double counter = std::stod(consume(token_type::NUMBER).get_text());
+
+    consume(token_type::ONCE);
+    std::unique_ptr<Statement> body = block();
+
+    return std::make_unique<RepeatStatement>(counter, std::move(body));
 }
 
 std::unique_ptr<Expression> Parser::expression()

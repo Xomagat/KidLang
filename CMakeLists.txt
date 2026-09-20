@@ -25,7 +25,8 @@ add_executable(kid main.cpp
         libs/Environment.h
         Parser/AST/VariablesExpression.h
         Parser/AST/IfStatement.h
-        Parser/AST/ConditionalExpression.h)
+        Parser/AST/ConditionalExpression.h
+        Parser/AST/LoopStatement.h)
 
 if (WIN32)
     target_link_options(kid PRIVATE -static-libgcc -static-libstdc++)

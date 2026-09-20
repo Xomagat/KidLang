@@ -20,6 +20,7 @@
 #include "AST/Expression.h"
 
 #include "AST/AssignmentStatement.h"
+#include "AST/LoopStatement.h"
 #include "AST/IOStatement.h"
 #include "AST/IfStatement.h"
 #include "AST/Statement.h"
@@ -35,11 +36,12 @@ private:
 
     Token get(int relative_position);
 
-    std::vector<std::unique_ptr<Statement>> block();
+    std::unique_ptr<Statement> block();
 
     std::unique_ptr<Statement> statement();
     std::unique_ptr<Statement> assigment_statement();
     std::unique_ptr<Statement> if_else();
+    std::unique_ptr<Statement> repeat_statement();
 
     std::unique_ptr<Expression> expression();
 
