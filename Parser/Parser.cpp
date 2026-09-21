@@ -61,6 +61,14 @@ std::unique_ptr<Statement> Parser::statement()
             consume(token_type::REPEAT);
             return repeat_statement();
         }
+        case token_type::BREAK: {
+            consume(token_type::BREAK);
+            return std::make_unique<BreakStatement>();
+        }
+        case token_type::CONTINUE: {
+            consume(token_type::CONTINUE);
+            return std::make_unique<ContinueStatement>();
+        }
 
         case token_type::NUMB:
         case token_type::STRING:

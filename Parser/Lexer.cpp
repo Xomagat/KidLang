@@ -221,18 +221,21 @@ void Lexer::tokenize_word()
     }
 
     static const std::unordered_map<std::u32string, token_type> keywords = {
-        {U"покажи", token_type::SHOW},
-        {U"если",   token_type::IF},
-        {U"может",  token_type::ELIF},
-        {U"иначе",  token_type::ELSE},
-        {U"повтори",token_type::REPEAT},
-        {U"раз",    token_type::ONCE},
-        {U"раза",   token_type::ONCE},
-        {U"число",  token_type::NUMB},
-        {U"текст",  token_type::STRING},
-        {U"ответ",  token_type::LOGIC},
-        {U"да",     token_type::TRUE},
-        {U"нет",    token_type::FALSE},
+        {U"покажи",   token_type::SHOW},
+        {U"если",     token_type::IF},
+        {U"может",    token_type::ELIF},
+        {U"иначе",    token_type::ELSE},
+        {U"повтори",  token_type::REPEAT},
+        {U"раз",      token_type::ONCE},
+        {U"раза",     token_type::ONCE},
+        {U"пока",     token_type::WHILE},
+        {U"стоп",     token_type::BREAK},
+        {U"продолжи", token_type::CONTINUE},
+        {U"число",    token_type::NUMB},
+        {U"текст",    token_type::STRING},
+        {U"ответ",    token_type::LOGIC},
+        {U"да",       token_type::TRUE},
+        {U"нет",      token_type::FALSE},
     };
 
     auto it = keywords.find(buffer);

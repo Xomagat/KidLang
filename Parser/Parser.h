@@ -21,6 +21,8 @@
 
 #include "AST/AssignmentStatement.h"
 #include "AST/LoopStatement.h"
+#include "AST/BreakStatement.h"
+#include "AST/ContinueStatement.h"
 #include "AST/IOStatement.h"
 #include "AST/IfStatement.h"
 #include "AST/Statement.h"

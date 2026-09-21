@@ -10,21 +10,34 @@
 #include <vector>
 
 #include "Statement.h"
+#include "ContinueStatement.h"
+#include "BreakStatement.h"
 
 class RepeatStatement : public Statement
 {
 private:
-    int how_much;
+    double how_much;
     std::unique_ptr<Statement> body;
 
 public:
-    explicit RepeatStatement(int how_much, std::unique_ptr<Statement> body) : how_much(how_much), body(std::move(body)) {}
+    explicit RepeatStatement(double how_much, std::unique_ptr<Statement> body) : how_much(how_much), body(std::move(body)) {}
 
     void execute(Environment &env) const override
     {
         for (int i = 0; i < how_much; i++)
         {
-            body->execute(env);
+            try
+            {
+                body->execute(env);
+            }
+            catch (const BreakStatement&)
+            {
+                break;
+            }
+            catch (const ContinueStatement&)
+            {
+                continue;
+            }
         }
     }
 };
