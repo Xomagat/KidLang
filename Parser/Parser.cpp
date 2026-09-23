@@ -364,6 +364,19 @@ std::unique_ptr<Expression> Parser::primary()
     }
     if (match(token_type::TEXT))
         return std::make_unique<ValueExpression>(current.get_text());
+    if (match(token_type::GET))
+    {
+        consume(token_type::LPARENT);
+
+        std::unique_ptr<Expression> prompt;
+        if (!match(token_type::RPARENT))
+        {
+            prompt = expression();
+            consume(token_type::RPARENT);
+        }
+
+        return std::make_unique<InputExpression>(std::move(prompt));
+    }
     if (current.get_type() == token_type::WORDS)
     {
         if (get(1).get_type() == token_type::LPARENT)

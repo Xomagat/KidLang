@@ -28,4 +28,25 @@ public:
     }
 };
 
+class InputExpression : public Expression
+{
+private:
+    std::unique_ptr<Expression> prompt; // может быть nullptr
+
+public:
+    explicit InputExpression(std::unique_ptr<Expression> prompt = nullptr)
+        : prompt(std::move(prompt)) {}
+
+    std::unique_ptr<Value> eval(Environment& env) const override
+    {
+        if (prompt)
+            std::cout << prompt->eval(env)->as_string();
+
+        std::string line;
+        std::getline(std::cin, line);
+
+        return std::make_unique<StringValue>(line);
+    }
+};
+
 #endif // KID_IOSTATEMENT_H

@@ -16,6 +16,7 @@ enum token_type
 
     // keywords
     SHOW,
+    GET,
     IF,
     ELIF,
     ELSE,
@@ -61,6 +62,7 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {SHOW, "покажи"}, {IF, "если"}, {ELIF, "может"},
     {REPEAT, "повтори"}, {ONCE, "раз/раза"}, {WHILE, "пока"},
     {BREAK, "стоп"}, {CONTINUE, "продолжи"}, {DEFINE, "рецепт"}, {RETURN, "верни"},
+    {GET, "получи"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
     {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"},
     {PLUS, "+"}, {MINUS, "-"}, {MULT, "*"}, {DIV, "/"}, {POW, "**"}, {EQ, "="},

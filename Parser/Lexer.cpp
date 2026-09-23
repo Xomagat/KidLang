@@ -223,6 +223,7 @@ void Lexer::tokenize_word()
 
     static const std::unordered_map<std::u32string, token_type> keywords = {
         {U"покажи",   token_type::SHOW},
+        {U"получи",   token_type::GET},
         {U"если",     token_type::IF},
         {U"может",    token_type::ELIF},
         {U"иначе",    token_type::ELSE},
@@ -232,7 +233,7 @@ void Lexer::tokenize_word()
         {U"пока",     token_type::WHILE},
         {U"стоп",     token_type::BREAK},
         {U"рецепт",   token_type::DEFINE},
-        {U"верни",  token_type::RETURN},
+        {U"верни",    token_type::RETURN},
         {U"продолжи", token_type::CONTINUE},
         {U"число",    token_type::NUMB},
         {U"текст",    token_type::STRING},
