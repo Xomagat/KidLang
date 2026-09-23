@@ -24,6 +24,9 @@ add_executable(kid main.cpp
         Parser/AST/UnaryExpression.h
         Parser/AST/IOStatement.h
         Parser/AST/AssignmentStatement.h
+        Parser/AST/FunctionalExpression.h
+        Parser/AST/FunctionStatement.h
+        Parser/AST/ReturnStatement.h
         libs/Environment.h
         Parser/AST/VariablesExpression.h
         Parser/AST/IfStatement.h
