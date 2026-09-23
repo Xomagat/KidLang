@@ -44,6 +44,7 @@ private:
     std::unique_ptr<Statement> assigment_statement();
     std::unique_ptr<Statement> if_else();
     std::unique_ptr<Statement> repeat_statement();
+    std::unique_ptr<Statement> while_statement();
 
     std::unique_ptr<Expression> expression();
 

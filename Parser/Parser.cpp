@@ -61,6 +61,10 @@ std::unique_ptr<Statement> Parser::statement()
             consume(token_type::REPEAT);
             return repeat_statement();
         }
+        case token_type::WHILE: {
+            consume(token_type::WHILE);
+            return while_statement();
+        }
         case token_type::BREAK: {
             consume(token_type::BREAK);
             return std::make_unique<BreakStatement>();
@@ -156,6 +160,14 @@ std::unique_ptr<Statement> Parser::repeat_statement()
     std::unique_ptr<Statement> body = block();
 
     return std::make_unique<RepeatStatement>(counter, std::move(body));
+}
+
+std::unique_ptr<Statement> Parser::while_statement()
+{
+    std::unique_ptr<Expression> condition = expression();
+    std::unique_ptr<Statement> body = block();
+
+    return std::make_unique<WhileStatement>(std::move(condition), std::move(body));
 }
 
 std::unique_ptr<Expression> Parser::expression()
