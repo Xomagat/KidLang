@@ -73,6 +73,14 @@ std::unique_ptr<Statement> Parser::statement()
             consume(token_type::CONTINUE);
             return std::make_unique<ContinueStatement>();
         }
+        case token_type::DEFINE: {
+            consume(token_type::DEFINE);
+            return define_function();
+        }
+        case token_type::RETURN: {
+            consume(token_type::RETURN);
+            return std::make_unique<ReturnStatement>(expression());
+        }
 
         case token_type::NUMB:
         case token_type::STRING:
@@ -80,6 +88,8 @@ std::unique_ptr<Statement> Parser::statement()
             return assigment_statement();
 
         case token_type::WORDS:
+            if (get(1).get_type() == token_type::LPARENT)
+                return std::make_unique<FunctionStatement>(function());
             return assigment_statement();
 
         default: {
@@ -168,6 +178,43 @@ std::unique_ptr<Statement> Parser::while_statement()
     std::unique_ptr<Statement> body = block();
 
     return std::make_unique<WhileStatement>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<Statement> Parser::define_function()
+{
+    std::string name = consume(token_type::WORDS).get_text();
+    consume(token_type::LPARENT);
+
+    std::vector<std::string> arg_type;
+    std::vector<std::string> arg_name;
+
+    Environment env;
+
+    while (!match(token_type::RPARENT))
+    {
+        arg_type.push_back(consume(get(0).get_type()).get_text());
+        arg_name.push_back(consume(token_type::WORDS).get_text());
+        match(token_type::COMMA);
+    }
+    std::unique_ptr<Statement> body = block();
+
+    return std::make_unique<FunctionDefineStatement>(name, arg_type, arg_name, std::move(body));
+}
+
+std::unique_ptr<Expression> Parser::function()
+{
+    std::string name = consume(token_type::WORDS).get_text();
+    consume(token_type::LPARENT);
+
+    std::unique_ptr<FunctionalExpression> function = std::make_unique<FunctionalExpression>(name);
+
+    while (!match(token_type::RPARENT))
+    {
+        function->add_arg(expression());
+        match(token_type::COMMA);
+    }
+
+    return function;
 }
 
 std::unique_ptr<Expression> Parser::expression()
@@ -317,6 +364,14 @@ std::unique_ptr<Expression> Parser::primary()
     }
     if (match(token_type::TEXT))
         return std::make_unique<ValueExpression>(current.get_text());
+    if (current.get_type() == token_type::WORDS)
+    {
+        if (get(1).get_type() == token_type::LPARENT)
+            return function();
+
+        consume(token_type::WORDS);
+        return std::make_unique<VariableExpression>(current.get_text());
+    }
     if (match(token_type::WORDS))
         return std::make_unique<VariableExpression>(current.get_text());
     if (match(token_type::LPARENT))

@@ -11,7 +11,7 @@
 // funcs
 Lexer::Lexer(const std::string& source)
 {
-    OPERATION_CHARS = U"+-*/=!()<>";
+    OPERATION_CHARS = U"+-*/=!()<>,";
     SINGLE_OPERATORS = {
         {U"+",  token_type::PLUS},
         {U"-",  token_type::MINUS},
@@ -27,6 +27,7 @@ Lexer::Lexer(const std::string& source)
         {U"!=", token_type::NOEQ},
         {U">=", token_type::GTEQ},
         {U"<=", token_type::LTEQ},
+        {U",",  token_type::COMMA},
     };
 
     code = decode_utf8(source);
@@ -230,6 +231,8 @@ void Lexer::tokenize_word()
         {U"раза",     token_type::ONCE},
         {U"пока",     token_type::WHILE},
         {U"стоп",     token_type::BREAK},
+        {U"рецепт",   token_type::DEFINE},
+        {U"верни",  token_type::RETURN},
         {U"продолжи", token_type::CONTINUE},
         {U"число",    token_type::NUMB},
         {U"текст",    token_type::STRING},

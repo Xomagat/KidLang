@@ -28,7 +28,7 @@ public:
     {
         switch (op)
         {
-        case '-': return std::make_unique<NumberValue>(expr->eval(env)->as_number());
+        case '-': return std::make_unique<NumberValue>(-expr->eval(env)->as_number());
         case '+': return std::make_unique<NumberValue>(expr->eval(env)->as_number());
         default: throw std::runtime_error("Неопределенное поведение для " + expr->eval(env)->as_string() + "!");
         }

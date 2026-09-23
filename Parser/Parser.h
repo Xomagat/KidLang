@@ -17,12 +17,15 @@
 #include "AST/UnaryExpression.h"
 #include "AST/ConditionalExpression.h"
 #include "AST/VariablesExpression.h"
+#include "AST/FunctionalExpression.h"
 #include "AST/Expression.h"
 
 #include "AST/AssignmentStatement.h"
 #include "AST/LoopStatement.h"
 #include "AST/BreakStatement.h"
 #include "AST/ContinueStatement.h"
+#include "AST/ReturnStatement.h"
+#include "AST/FunctionStatement.h"
 #include "AST/IOStatement.h"
 #include "AST/IfStatement.h"
 #include "AST/Statement.h"
@@ -45,7 +48,9 @@ private:
     std::unique_ptr<Statement> if_else();
     std::unique_ptr<Statement> repeat_statement();
     std::unique_ptr<Statement> while_statement();
+    std::unique_ptr<Statement> define_function();
 
+    std::unique_ptr<Expression> function();
     std::unique_ptr<Expression> expression();
 
     std::unique_ptr<Expression> equality();
