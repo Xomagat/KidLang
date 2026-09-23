@@ -18,6 +18,8 @@ add_executable(kid main.cpp
         libs/NumberValue.h
         libs/BoolValue.h
         libs/StringValue.h
+        libs/Functions.h
+        libs/Function.h
         Parser/AST/ValueExpression.h
         Parser/AST/UnaryExpression.h
         Parser/AST/IOStatement.h
