@@ -48,6 +48,7 @@ private:
     std::unique_ptr<Statement> if_else();
     std::unique_ptr<Statement> repeat_statement();
     std::unique_ptr<Statement> while_statement();
+    std::unique_ptr<Statement> for_statement();
     std::unique_ptr<Statement> define_function();
 
     std::unique_ptr<Expression> function();

@@ -7,6 +7,7 @@
 
 #pragma once
 #include <string>
+#include <sstream>
 
 #include "Value.h"
 
@@ -25,7 +26,9 @@ public:
 
     std::string as_string() const override
     {
-        return std::to_string(value);
+        std::ostringstream ss;
+        ss << value;
+        return ss.str();
     }
 
     bool as_bool() const override

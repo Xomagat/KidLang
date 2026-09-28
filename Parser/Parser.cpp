@@ -65,6 +65,10 @@ std::unique_ptr<Statement> Parser::statement()
             consume(token_type::WHILE);
             return while_statement();
         }
+        case token_type::FOR: {
+            consume(token_type::FOR);
+            return for_statement();
+        }
         case token_type::BREAK: {
             consume(token_type::BREAK);
             return std::make_unique<BreakStatement>();
@@ -178,6 +182,30 @@ std::unique_ptr<Statement> Parser::while_statement()
     std::unique_ptr<Statement> body = block();
 
     return std::make_unique<WhileStatement>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<Statement> Parser::for_statement()
+{
+    std::string type = consume(get(0).get_type()).get_text();
+    std::string name = consume(token_type::WORDS).get_text();
+    consume(token_type::FROM);
+    std::unique_ptr<Expression> expr1 = expression();
+    consume(token_type::TO);
+    std::unique_ptr<Expression> expr2 = expression();
+    double to_add = 1;
+
+    if (match(token_type::ADDTO))
+        if (get(0).get_type() != token_type::MINUS)
+            to_add = std::stod(consume(token_type::NUMBER).get_text());
+        else
+            to_add = -std::stod(consume(token_type::NUMBER).get_text());
+
+    std::unique_ptr<Statement> var = std::make_unique<AssignmentStatement>(type, name, std::move(expr1));
+
+    std::unique_ptr<Statement> body = block();
+
+    return std::make_unique<ForStatement>(std::move(var), std::move(body),
+                                      std::move(expr2), type, name, to_add);
 }
 
 std::unique_ptr<Statement> Parser::define_function()
