@@ -43,6 +43,7 @@ enum token_type
     MULT,
     DIV,
     POW,
+    MOD,
     EQ,
     LT,
     GT,

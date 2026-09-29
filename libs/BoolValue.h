@@ -25,7 +25,7 @@ public:
 
     std::string as_string() const override
     {
-        return value == true ? "да" : "нет";
+        return value == true ? "верно" : "неверно";
     }
 
     bool as_bool() const override
