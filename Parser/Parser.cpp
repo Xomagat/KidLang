@@ -210,6 +210,7 @@ std::unique_ptr<Statement> Parser::for_statement()
 
 std::unique_ptr<Statement> Parser::define_function()
 {
+    std::string type = "ничего";
     std::string name = consume(token_type::WORDS).get_text();
     consume(token_type::LPARENT);
 
@@ -224,9 +225,13 @@ std::unique_ptr<Statement> Parser::define_function()
         arg_name.push_back(consume(token_type::WORDS).get_text());
         match(token_type::COMMA);
     }
+
+    if (match(token_type::RETURNED))
+        type = consume(get(0).get_type()).get_text();
+
     std::unique_ptr<Statement> body = block();
 
-    return std::make_unique<FunctionDefineStatement>(name, arg_type, arg_name, std::move(body));
+    return std::make_unique<FunctionDefineStatement>(type, name, arg_type, arg_name, std::move(body));
 }
 
 std::unique_ptr<Expression> Parser::function()
@@ -275,8 +280,6 @@ std::unique_ptr<Expression> Parser::equality()
 std::unique_ptr<Expression> Parser::conditional()
 {
     std::unique_ptr<Expression> expr = additive();
-
-
 
     while (true)
     {
@@ -397,6 +400,8 @@ std::unique_ptr<Expression> Parser::primary()
     }
     if (match(token_type::TEXT))
         return std::make_unique<ValueExpression>(current.get_text());
+    if (match(token_type::NOTHING))
+        return std::make_unique<ValueExpression>(NothingTag{});
     if (match(token_type::GET))
     {
         consume(token_type::LPARENT);

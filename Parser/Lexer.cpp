@@ -236,6 +236,8 @@ void Lexer::tokenize_word()
         {U"стоп",     token_type::BREAK},
         {U"рецепт",   token_type::DEFINE},
         {U"верни",    token_type::RETURN},
+        {U"вернет",   token_type::RETURNED},
+        {U"ничего",   token_type::NOTHING},
         {U"для",      token_type::FOR},
         {U"от",       token_type::FROM},
         {U"до",       token_type::TO},

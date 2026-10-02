@@ -4,6 +4,7 @@
 
 #pragma once
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "Environment.h"
@@ -11,6 +12,14 @@
 
 #include "../Parser/AST/Statement.h"
 #include "../Parser/AST/ReturnStatement.h"
+
+inline std::string value_type_name(Value* v)
+{
+    if (dynamic_cast<NumberValue*>(v)) return "число";
+    if (dynamic_cast<StringValue*>(v)) return "текст";
+    if (dynamic_cast<BoolValue*>(v))   return "условие";
+    return "неизвестный тип";
+}
 
 class Function
 {
@@ -24,12 +33,19 @@ public:
 class UserDefineFunction : public Function
 {
 private:
+    std::string type;
     std::vector<std::string> arg_types;
     std::vector<std::string> arg_names;
     std::shared_ptr<Statement> body;
 
 public:
-    explicit UserDefineFunction(std::vector<std::string> arg_types, std::vector<std::string> arg_names, std::shared_ptr<Statement> body) : arg_types(arg_types), arg_names(arg_names), body(std::move(body)) {}
+    explicit UserDefineFunction(std::string  type, const std::vector<std::string>& arg_types, const std::vector<std::string>& arg_names, std::shared_ptr<Statement> body)
+    : type(std::move(type)), arg_types(arg_types), arg_names(arg_names), body(std::move(body)) {}
+
+    const std::string& get_type()
+    {
+        return type;
+    }
 
     int get_names_size()
     {
@@ -54,11 +70,30 @@ public:
         {
             Environment local(&env);
             body->execute(local);
-            return nullptr;
         }
         catch (ReturnException& re)
         {
-            return re.take_value();
+            std::unique_ptr<Value> result = re.take_value();
+
+            if (type == "ничего")
+            {
+                if (re.take_value() == nullptr)
+                    return result;
+
+                throw std::runtime_error("Этот рецепт ничего не обещал вернуть, а ты вернул «"
+                                     + value_type_name(result.get()) + "»!");
+            }
+
+            if (value_type_name(result.get()) != type)
+                throw std::runtime_error("Рецепт обещал вернуть «" + type + "», а ты вернул «"
+                                         + value_type_name(result.get()) + "»!");
+
+            return result;
         }
+
+        if (type != "ничего")
+            throw std::runtime_error("Рецепт обещал вернуть «" + type + "», но ничего не вернул!");
+
+        return nullptr;
     }
 };

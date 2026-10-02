@@ -24,7 +24,9 @@ public:
 
     void execute(Environment& env) const override
     {
-        std::cout << expr->eval(env)->as_string() << std::endl;
+        auto v = expr->eval(env);
+        if (!v) throw std::runtime_error("Нечего показывать: рецепт ничего не вернул!");
+        std::cout << v->as_string() << std::endl;
     }
 };
 

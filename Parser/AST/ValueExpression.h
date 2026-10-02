@@ -15,9 +15,11 @@
 #include "../../libs/NumberValue.h"
 #include "../../libs/StringValue.h"
 #include "../../libs/BoolValue.h"
+#include "../../libs/NothingValue.h"
 #include "Expression.h"
 
 struct BoolTag { bool b; };
+struct NothingTag { };
 
 class ValueExpression : public Expression
 {
@@ -37,9 +39,15 @@ public:
     {
         this->value = std::make_unique<BoolValue>(value.b);
     }
+    explicit ValueExpression(const NothingTag&)
+    {
+        this->value = std::make_unique<NothingValue>();
+    }
 
     std::unique_ptr<Value> eval(Environment& env) const override
     {
+        if (auto n = dynamic_cast<NothingValue*>(value.get()))
+            return std::make_unique<NothingValue>();
         if (auto b = dynamic_cast<BoolValue*>(value.get()))
             return std::make_unique<BoolValue>(b->as_bool());
         if (auto s = dynamic_cast<StringValue*>(value.get()))

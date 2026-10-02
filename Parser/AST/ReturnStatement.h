@@ -33,6 +33,8 @@ public:
 
     void execute(Environment &env) const override
     {
+        if (expr->eval(env) == nullptr)
+            throw ReturnException(nullptr);
         throw ReturnException(expr->eval(env));
     }
 };

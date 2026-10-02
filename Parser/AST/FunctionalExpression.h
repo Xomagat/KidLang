@@ -53,8 +53,14 @@ public:
             }
 
             std::unique_ptr<Value> result = f->execute(local, {});
-            if (!result)
-                throw std::runtime_error("Function '" + name + "' did not return a value!");
+
+            if (f->get_type() == "ничего")
+                return result;
+
+            if (!result && f->get_type() != "ничего")
+                throw std::runtime_error("Функция '" + name + "' не вернула значение!");
+            if (!match_type(f->get_type(), result.get()))
+                throw std::runtime_error("Функция '" + name + "' вернула значение не того типа!");
             return result;
         }
 

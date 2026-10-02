@@ -27,6 +27,7 @@ enum token_type
     CONTINUE,
     DEFINE,
     RETURN,
+    RETURNED,
     FOR,
     FROM,
     TO,
@@ -34,6 +35,7 @@ enum token_type
     NUMB,
     STRING,
     LOGIC,
+    NOTHING,
     TRUE,
     FALSE,
 
@@ -67,6 +69,7 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {SHOW, "покажи"}, {IF, "если"}, {ELIF, "может"},
     {REPEAT, "повтори"}, {ONCE, "раз/раза"}, {WHILE, "пока"},
     {BREAK, "стоп"}, {CONTINUE, "продолжи"}, {DEFINE, "рецепт"}, {RETURN, "верни"},
+    {RETURNED, "вернет/вернёт"}, {NOTHING, "ничего"},
     {GET, "получи"}, {FOR, "для"}, {FROM, "от"}, {TO, "до"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
     {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"},
