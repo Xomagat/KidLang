@@ -40,6 +40,7 @@ enum token_type
     FALSE,
     AND,
     OR,
+    NOT,
 
     // op
     PLUS,
@@ -51,7 +52,7 @@ enum token_type
     EQ,
     LT,
     GT,
-    NOT,
+    EM,
     EQEQ,
     NOEQ,
     LTEQ,
@@ -72,12 +73,13 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {REPEAT, "повтори"}, {ONCE, "раз/раза"}, {WHILE, "пока"},
     {BREAK, "стоп"}, {CONTINUE, "продолжи"}, {DEFINE, "рецепт"}, {RETURN, "верни"},
     {RETURNED, "вернет/вернёт"}, {NOTHING, "ничего"}, {AND, "и"}, {OR, "или"},
+    {NOT, "не"},
     {GET, "получи"}, {FOR, "для"}, {FROM, "от"}, {TO, "до"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
     {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"},
     {PLUS, "+"}, {MINUS, "-"}, {MULT, "*"}, {DIV, "/"}, {POW, "**"}, {EQ, "="},
     {EQEQ, "=="}, {NOEQ, "!="}, {GT, ">"}, {LT, "<"}, {GTEQ, ">="}, {LTEQ, "<="},
-    {LPARENT, "("}, {RPARENT, ")"}, {NOT, "!"},
+    {LPARENT, "("}, {RPARENT, ")"}, {EM, "!"},
     {INDENT, "<отступ>"}, {DEDENT, "<конец отступа>"},
     {eof, "<конец файла>"}
 };

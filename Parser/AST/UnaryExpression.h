@@ -45,6 +45,7 @@ public:
 
                     return std::make_unique<NumberValue>(result);
                 }
+                case 'n': return std::make_unique<BoolValue>(!expr->eval(env)->as_bool());
             }
             default: throw std::runtime_error("Неопределенное поведение для " + expr->eval(env)->as_string() + "!");
         }

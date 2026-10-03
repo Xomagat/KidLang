@@ -274,19 +274,27 @@ std::unique_ptr<Expression> Parser::logic_or()
 
 std::unique_ptr<Expression> Parser::logic_and()
 {
-    std::unique_ptr<Expression> expr = equality();
+    std::unique_ptr<Expression> expr = logic_not();
 
     while (true)
     {
         if (match(token_type::AND))
         {
-            expr = std::make_unique<ConditionalExpression>("и", std::move(expr), equality());
+            expr = std::make_unique<ConditionalExpression>("и", std::move(expr), logic_not());
             continue;
         }
         break;
     }
 
     return expr;
+}
+
+std::unique_ptr<Expression> Parser::logic_not()
+{
+    if (match(token_type::NOT))
+        return std::make_unique<UnaryExpression>('n', std::move(logic_not()));
+
+    return equality();
 }
 
 std::unique_ptr<Expression> Parser::equality()
@@ -427,7 +435,7 @@ std::unique_ptr<Expression> Parser::factorials()
 {
     std::unique_ptr<Expression> expr = primary();
 
-    while (match(token_type::NOT))
+    while (match(token_type::EM))
         expr = std::make_unique<UnaryExpression>('f', std::move(expr));
 
     return expr;

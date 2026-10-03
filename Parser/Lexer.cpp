@@ -20,7 +20,7 @@ Lexer::Lexer(const std::string& source)
         {U"**", token_type::POW},
         {U"%",  token_type::MOD},
         {U"=",  token_type::EQ},
-        {U"!",  token_type::NOT},
+        {U"!",  token_type::EM},
         {U"(",  token_type::LPARENT},
         {U")",  token_type::RPARENT},
         {U">",  token_type::GT},
@@ -250,6 +250,7 @@ void Lexer::tokenize_word()
         {U"неверно",  token_type::FALSE},
         {U"и",        token_type::AND},
         {U"или",      token_type::OR},
+        {U"не",       token_type::NOT},
     };
 
     auto it = keywords.find(buffer);
