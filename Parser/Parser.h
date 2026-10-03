@@ -53,6 +53,8 @@ private:
 
     std::unique_ptr<Expression> function();
     std::unique_ptr<Expression> expression();
+    std::unique_ptr<Expression> logic_or();
+    std::unique_ptr<Expression> logic_and();
 
     std::unique_ptr<Expression> equality();
 

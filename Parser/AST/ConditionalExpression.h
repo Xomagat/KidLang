@@ -34,13 +34,13 @@ public:
         std::unique_ptr<Value> value1 = expr1->eval(env);
         std::unique_ptr<Value> value2 = expr2->eval(env);
 
-        if (op == "&&")
+        if (op == "и")
         {
             auto v1 = expr1->eval(env);
             if (!v1->as_bool()) return std::make_unique<BoolValue>(false);
             return std::make_unique<BoolValue>(expr2->eval(env)->as_bool());
         }
-        if (op == "||")
+        if (op == "или")
         {
             auto v1 = expr1->eval(env);
             if (v1->as_bool()) return std::make_unique<BoolValue>(true);

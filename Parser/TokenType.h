@@ -38,6 +38,8 @@ enum token_type
     NOTHING,
     TRUE,
     FALSE,
+    AND,
+    OR,
 
     // op
     PLUS,
@@ -69,7 +71,7 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {SHOW, "покажи"}, {IF, "если"}, {ELIF, "может"},
     {REPEAT, "повтори"}, {ONCE, "раз/раза"}, {WHILE, "пока"},
     {BREAK, "стоп"}, {CONTINUE, "продолжи"}, {DEFINE, "рецепт"}, {RETURN, "верни"},
-    {RETURNED, "вернет/вернёт"}, {NOTHING, "ничего"},
+    {RETURNED, "вернет/вернёт"}, {NOTHING, "ничего"}, {AND, "и"}, {OR, "или"},
     {GET, "получи"}, {FOR, "для"}, {FROM, "от"}, {TO, "до"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
     {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"},

@@ -248,6 +248,8 @@ void Lexer::tokenize_word()
         {U"условие",  token_type::LOGIC},
         {U"верно",    token_type::TRUE},
         {U"неверно",  token_type::FALSE},
+        {U"и",        token_type::AND},
+        {U"или",      token_type::OR},
     };
 
     auto it = keywords.find(buffer);

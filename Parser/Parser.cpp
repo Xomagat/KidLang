@@ -252,7 +252,41 @@ std::unique_ptr<Expression> Parser::function()
 
 std::unique_ptr<Expression> Parser::expression()
 {
-    return equality();
+    return logic_or();
+}
+
+std::unique_ptr<Expression> Parser::logic_or()
+{
+    std::unique_ptr<Expression> expr = logic_and();
+
+    while (true)
+    {
+        if (match(token_type::OR))
+        {
+            expr = std::make_unique<ConditionalExpression>("или", std::move(expr), logic_and());
+            continue;
+        }
+        break;
+    }
+
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::logic_and()
+{
+    std::unique_ptr<Expression> expr = equality();
+
+    while (true)
+    {
+        if (match(token_type::AND))
+        {
+            expr = std::make_unique<ConditionalExpression>("и", std::move(expr), equality());
+            continue;
+        }
+        break;
+    }
+
+    return expr;
 }
 
 std::unique_ptr<Expression> Parser::equality()
