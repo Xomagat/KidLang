@@ -61,6 +61,7 @@ private:
     std::unique_ptr<Expression> additive();
     std::unique_ptr<Expression> multiply();
     std::unique_ptr<Expression> pow();
+    std::unique_ptr<Expression> factorials();
     std::unique_ptr<Expression> unary();
     std::unique_ptr<Expression> primary();
 
@@ -74,4 +75,4 @@ public:
     std::vector<std::unique_ptr<Statement>> parse();
 };
 
-#endif // KID_PARSER_H
+#endif

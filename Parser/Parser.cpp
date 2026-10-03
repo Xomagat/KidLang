@@ -376,18 +376,27 @@ std::unique_ptr<Expression> Parser::pow()
         break;
     }
 
-
     return expr;
 }
 
 std::unique_ptr<Expression> Parser::unary()
 {
     if (match(token_type::MINUS))
-        return std::make_unique<UnaryExpression>('-', std::move(primary()));
+        return std::make_unique<UnaryExpression>('-', std::move(factorials()));
     if (match(token_type::PLUS))
-        return std::make_unique<UnaryExpression>('+', std::move(primary()));
+        return std::make_unique<UnaryExpression>('+', std::move(factorials()));
 
-    return primary();
+    return factorials();
+}
+
+std::unique_ptr<Expression> Parser::factorials()
+{
+    std::unique_ptr<Expression> expr = primary();
+
+    while (match(token_type::NOT))
+        expr = std::make_unique<UnaryExpression>('f', std::move(expr));
+
+    return expr;
 }
 
 std::unique_ptr<Expression> Parser::primary()

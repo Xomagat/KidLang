@@ -28,9 +28,25 @@ public:
     {
         switch (op)
         {
-        case '-': return std::make_unique<NumberValue>(-expr->eval(env)->as_number());
-        case '+': return std::make_unique<NumberValue>(expr->eval(env)->as_number());
-        default: throw std::runtime_error("Неопределенное поведение для " + expr->eval(env)->as_string() + "!");
+            case '-': return std::make_unique<NumberValue>(-expr->eval(env)->as_number());
+            case '+': return std::make_unique<NumberValue>(expr->eval(env)->as_number());
+            case 'f': {
+                case '!': {
+                    double n = expr->eval(env)->as_number();
+
+                    if (n < 0 || n != std::floor(n))
+                        throw std::runtime_error("Факториал есть только у целых чисел от нуля!");
+                    if (n > 170)
+                        throw std::runtime_error("Слишком большое число для факториала!");
+
+                    double result = 1;
+                    for (int i = 2; i <= static_cast<int>(n); i++)
+                        result *= i;
+
+                    return std::make_unique<NumberValue>(result);
+                }
+            }
+            default: throw std::runtime_error("Неопределенное поведение для " + expr->eval(env)->as_string() + "!");
         }
     }
 };
