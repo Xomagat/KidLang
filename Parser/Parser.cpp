@@ -466,6 +466,18 @@ std::unique_ptr<Expression> Parser::primary()
 
         return std::make_unique<InputExpression>(std::move(prompt));
     }
+    if (match(token_type::CONVERT))
+    {
+        std::unique_ptr<Expression> inner = expression();
+        consume(token_type::IN);
+
+        Token t = get(0);
+        if (!type_check(t.get_type()))
+            throw std::runtime_error("После 'в' нужно написать тип: число, текст или условие!");
+        pos++;
+
+        return std::make_unique<ConvertExpression>(t.get_text(), std::move(inner));
+    }
     if (current.get_type() == token_type::WORDS)
     {
         if (get(1).get_type() == token_type::LPARENT)

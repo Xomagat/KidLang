@@ -251,6 +251,8 @@ void Lexer::tokenize_word()
         {U"и",        token_type::AND},
         {U"или",      token_type::OR},
         {U"не",       token_type::NOT},
+        {U"преврати", token_type::CONVERT},
+        {U"в",        token_type::IN},
     };
 
     auto it = keywords.find(buffer);

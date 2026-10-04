@@ -18,6 +18,7 @@
 #include "AST/ConditionalExpression.h"
 #include "AST/VariablesExpression.h"
 #include "AST/FunctionalExpression.h"
+#include "AST/ConvertExpression.h"
 #include "AST/Expression.h"
 
 #include "AST/AssignmentStatement.h"
