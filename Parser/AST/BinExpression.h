@@ -9,6 +9,8 @@
 #include <cmath>
 #include <memory>
 
+#include "AssignmentStatement.h"
+
 #include "../../libs/Environment.h"
 
 #include "Expression.h"
@@ -28,6 +30,27 @@ public:
 
     std::unique_ptr<Value> eval(Environment& env) const override
     {
+        if (match_type("текст", left->eval(env).get()))
+        {
+            std::string s1 = left->eval(env)->as_string();
+            std::string s2 = right->eval(env)->as_string();
+
+            switch (op)
+            {
+                case '+': return std::make_unique<StringValue>(s1 + s2);
+                case '*': {
+                    std::string r = "";
+
+                    for (long long i = 0; i < std::stoll(s2); i++)
+                    {
+                        r += s1;
+                    }
+
+                    return std::make_unique<StringValue>(r);
+                }
+            }
+        }
+
         double l = left->eval(env)->as_number();
         double r = right->eval(env)->as_number();
 
