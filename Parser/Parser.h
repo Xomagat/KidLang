@@ -19,6 +19,7 @@
 #include "AST/VariablesExpression.h"
 #include "AST/FunctionalExpression.h"
 #include "AST/ConvertExpression.h"
+#include "AST/MethodExpression.h"
 #include "AST/Expression.h"
 
 #include "AST/AssignmentStatement.h"
@@ -66,6 +67,7 @@ private:
     std::unique_ptr<Expression> multiply();
     std::unique_ptr<Expression> pow();
     std::unique_ptr<Expression> factorials();
+    std::unique_ptr<Expression> postfix();
     std::unique_ptr<Expression> unary();
     std::unique_ptr<Expression> primary();
 

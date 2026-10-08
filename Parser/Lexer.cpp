@@ -11,7 +11,7 @@
 // funcs
 Lexer::Lexer(const std::string& source)
 {
-    OPERATION_CHARS = U"+-*%/=!()<>,";
+    OPERATION_CHARS = U"+-*%/=!()<>,.";
     SINGLE_OPERATORS = {
         {U"+",  token_type::PLUS},
         {U"-",  token_type::MINUS},
@@ -30,6 +30,7 @@ Lexer::Lexer(const std::string& source)
         {U">=", token_type::GTEQ},
         {U"<=", token_type::LTEQ},
         {U",",  token_type::COMMA},
+        {U".",  token_type::DOT},
     };
 
     code = decode_utf8(source);

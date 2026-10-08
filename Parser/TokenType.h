@@ -62,6 +62,7 @@ enum token_type
     LPARENT,
     RPARENT,
     COMMA,
+    DOT,
 
     INDENT,
     DEDENT,
@@ -78,7 +79,7 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {NOT, "не"}, {CONVERT, "преврати"}, {IN, "в"},
     {GET, "получи"}, {FOR, "для"}, {FROM, "от"}, {TO, "до"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
-    {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"},
+    {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"}, {COMMA, ","}, {DOT, "."},
     {PLUS, "+"}, {MINUS, "-"}, {MULT, "*"}, {DIV, "/"}, {POW, "**"}, {EQ, "="},
     {EQEQ, "=="}, {NOEQ, "!="}, {GT, ">"}, {LT, "<"}, {GTEQ, ">="}, {LTEQ, "<="},
     {LPARENT, "("}, {RPARENT, ")"}, {EM, "!"},

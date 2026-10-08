@@ -92,8 +92,8 @@ std::unique_ptr<Statement> Parser::statement()
             return assigment_statement();
 
         case token_type::WORDS:
-            if (get(1).get_type() == token_type::LPARENT)
-                return std::make_unique<FunctionStatement>(function());
+            if (get(1).get_type() == token_type::LPARENT || get(1).get_type() == token_type::DOT)
+                return std::make_unique<FunctionStatement>(postfix());
             return assigment_statement();
 
         default: {
@@ -424,19 +424,40 @@ std::unique_ptr<Expression> Parser::pow()
 std::unique_ptr<Expression> Parser::unary()
 {
     if (match(token_type::MINUS))
-        return std::make_unique<UnaryExpression>('-', std::move(factorials()));
+        return std::make_unique<UnaryExpression>('-', std::move(unary()));
     if (match(token_type::PLUS))
-        return std::make_unique<UnaryExpression>('+', std::move(factorials()));
+        return std::make_unique<UnaryExpression>('+', std::move(unary()));
 
     return factorials();
 }
 
 std::unique_ptr<Expression> Parser::factorials()
 {
-    std::unique_ptr<Expression> expr = primary();
+    std::unique_ptr<Expression> expr = postfix();
 
     while (match(token_type::EM))
         expr = std::make_unique<UnaryExpression>('f', std::move(expr));
+
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::postfix()
+{
+    std::unique_ptr<Expression> expr = primary();
+
+    while (match(token_type::DOT))
+    {
+        std::string name = consume(token_type::WORDS).get_text();
+        consume(token_type::LPARENT);
+
+        auto call = std::make_unique<MethodExpression>(std::move(expr), name);
+        while (!match(token_type::RPARENT))
+        {
+            call->add_arg(expression());
+            match(token_type::COMMA);
+        }
+        expr = std::move(call);
+    }
 
     return expr;
 }
