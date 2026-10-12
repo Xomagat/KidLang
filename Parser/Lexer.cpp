@@ -17,9 +17,17 @@ Lexer::Lexer(const std::string& source)
         {U"-",  token_type::MINUS},
         {U"*",  token_type::MULT},
         {U"/",  token_type::DIV},
+        {U"//", token_type::INTDIV},
         {U"**", token_type::POW},
         {U"%",  token_type::MOD},
         {U"=",  token_type::EQ},
+        {U"+=", token_type::PLUSEQ},
+        {U"-=", token_type::MINUSEQ},
+        {U"*=", token_type::MULTEQ},
+        {U"/=", token_type::DIVEQ},
+        {U"//=",token_type::INTDIVEQ},
+        {U"**=",token_type::POWEQ},
+        {U"%=", token_type::MODEQ},
         {U"!",  token_type::EM},
         {U"(",  token_type::LPARENT},
         {U")",  token_type::RPARENT},
@@ -191,24 +199,25 @@ void Lexer::tokenize_string()
 
 void Lexer::tokenize_operation()
 {
-    std::u32string one(1, peek(0));
-    std::u32string two = one + peek(1);
-
-    if (SINGLE_OPERATORS.contains(two))
+    for (int len = 3; len >= 1; len--)
     {
-        add_token(SINGLE_OPERATORS.at(two));
-        next(); next();
-        return;
+        std::u32string op;
+        for (int i = 0; i < len && peek(i) != U'\0'; i++)
+            op.push_back(peek(i));
+
+        if ((int)op.size() != len) continue;
+
+        auto it = SINGLE_OPERATORS.find(op);
+        if (it != SINGLE_OPERATORS.end())
+        {
+            add_token(it->second);
+            for (int i = 0; i < len; i++) next();
+            return;
+        }
     }
 
-    if (SINGLE_OPERATORS.contains(one))
-    {
-        add_token(SINGLE_OPERATORS.at(one));
-        next();
-        return;
-    }
-
-    throw std::runtime_error("Ой, я не знаю: " + encode_utf8(one) + "! Ты уверен, что написал правильно?");
+    throw std::runtime_error("Ой, я не знаю: " + encode_utf8(std::u32string(1, peek(0)))
+        + "! Ты уверен, что написал правильно?");
 }
 
 void Lexer::tokenize_word()

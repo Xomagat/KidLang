@@ -133,14 +133,35 @@ std::unique_ptr<Statement> Parser::assigment_statement()
 
         return std::make_unique<AssignmentStatement>(type, name, std::move(expr));
     }
-    else if (current.get_type() == token_type::WORDS && get(1).get_type() == token_type::EQ)
+    else if (current.get_type() == token_type::WORDS)
     {
-        std::string name = consume(token_type::WORDS).get_text();
-        consume(token_type::EQ);
+        std::string name = current.get_text();
 
-        std::unique_ptr<Expression> expr = expression();
+        if (get(1).get_type() == token_type::EQ)
+        {
+            consume(token_type::WORDS);
+            consume(token_type::EQ);
+            std::unique_ptr<Expression> expr = expression();
+            return std::make_unique<AssignmentStatement>("", name, std::move(expr));
+        }
 
-        return std::make_unique<AssignmentStatement>("", name, std::move(expr));
+        static const std::unordered_map<token_type, char> compoundOps = {
+            {token_type::PLUSEQ, '+'}, {token_type::MINUSEQ, '-'},
+            {token_type::MULTEQ, '*'}, {token_type::DIVEQ, '/'},
+            {token_type::MODEQ, '%'}, {token_type::POWEQ, 'p'},
+            {token_type::INTDIVEQ, 'd'}
+        };
+
+        auto it = compoundOps.find(get(1).get_type());
+        if (it != compoundOps.end())
+        {
+            consume(token_type::WORDS);
+            pos++;
+            std::unique_ptr<Expression> right = expression();
+            auto binExpr = std::make_unique<BinExpression>(it->second,
+                std::make_unique<VariableExpression>(name), std::move(right));
+            return std::make_unique<AssignmentStatement>("", name, std::move(binExpr));
+        }
     }
 
     throw std::runtime_error("При объявлении переменной, было пропущено имя или тип!");
@@ -385,6 +406,11 @@ std::unique_ptr<Expression> Parser::multiply()
         if (match(token_type::MULT))
         {
             expr = std::make_unique<BinExpression>('*', std::move(expr), pow());
+            continue;
+        }
+        if (match(token_type::INTDIV))
+        {
+            expr = std::make_unique<BinExpression>('d', std::move(expr), pow());
             continue;
         }
         if (match(token_type::DIV))

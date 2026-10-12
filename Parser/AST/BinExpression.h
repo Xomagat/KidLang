@@ -62,6 +62,7 @@ public:
             case '/': return std::make_unique<NumberValue>(l / r);
             case '%': return std::make_unique<NumberValue>(std::fmod(l, r));
             case 'p': return std::make_unique<NumberValue>(std::pow(l, r));
+            case 'd': return std::make_unique<NumberValue>(static_cast<int>(l / r));
         }
     }
 };
