@@ -34,7 +34,12 @@ add_executable(kid main.cpp
         Parser/AST/LoopStatement.h
         Parser/AST/BreakStatement.h
         Parser/AST/ContinueStatement.h
-        libs/NothingValue.h)
+        libs/NothingValue.h
+        Parser/AST/ConvertExpression.h
+        libs/Methods.h
+        Parser/AST/MethodExpression.h
+        libs/ListValue.h
+        Parser/AST/ListExpression.h)
 
 if (WIN32)
     target_link_options(kid PRIVATE -static-libgcc -static-libstdc++)
