@@ -470,6 +470,10 @@ std::unique_ptr<Expression> Parser::primary()
     {
         return std::make_unique<ValueExpression>(std::stod(current.get_text()));
     }
+    if (match(token_type::TRUE))
+        return std::make_unique<ValueExpression>(BoolTag{true});
+    if (match(token_type::FALSE))
+        return std::make_unique<ValueExpression>(BoolTag{false});
     if (match(token_type::TEXT))
         return std::make_unique<ValueExpression>(current.get_text());
     if (match(token_type::NOTHING))

@@ -28,7 +28,7 @@ inline std::unordered_map<std::string, std::function<std::unique_ptr<Value>(Valu
         double d = n->as_number();
         return std::make_unique<NumberValue>(d);
     }},
-    {"ответ", [](Value* v) -> std::unique_ptr<Value> {
+    {"условие", [](Value* v) -> std::unique_ptr<Value> {
         auto n = dynamic_cast<BoolValue*>(v);
         if (!n) return nullptr;
         bool b = n->as_bool();
@@ -45,9 +45,9 @@ inline std::unordered_map<std::string, std::function<std::unique_ptr<Value>(Valu
 inline bool match_type(const std::string& type, Value* expr)
 {
     std::unordered_map<std::string, bool> match = {
-        {"текст", dynamic_cast<StringValue*>(expr) != nullptr},
-        {"ответ",   dynamic_cast<BoolValue*>(expr) != nullptr},
-        {"число", dynamic_cast<NumberValue*>(expr) != nullptr},
+        {"текст",    dynamic_cast<StringValue*>(expr) != nullptr},
+        {"условие",  dynamic_cast<BoolValue*>(expr) != nullptr},
+        {"число",    dynamic_cast<NumberValue*>(expr) != nullptr},
     };
 
     return match.at(type);
