@@ -85,13 +85,19 @@ std::unique_ptr<Statement> Parser::statement()
             consume(token_type::RETURN);
             return std::make_unique<ReturnStatement>(expression());
         }
+        case token_type::LIST:
+            return assigment_statement();
 
         case token_type::NUMB:
         case token_type::STRING:
         case token_type::LOGIC:
             return assigment_statement();
 
+
         case token_type::WORDS:
+            if (get(1).get_type() == token_type::LBRACKET)
+                return index_assignment();
+
             if (get(1).get_type() == token_type::LPARENT || get(1).get_type() == token_type::DOT)
                 return std::make_unique<FunctionStatement>(postfix());
             return assigment_statement();
@@ -115,19 +121,33 @@ bool type_check(token_type type)
     return false;
 }
 
+std::string Parser::parse_type()
+{
+    if (match(token_type::LIST))
+        return "список " + parse_type();
+
+    Token t = get(0);
+    if (!type_check(t.get_type()))
+        throw std::runtime_error("Здесь нужен тип: число, текст, условие или список!");
+    pos++;
+    return t.get_text();
+}
+
 std::unique_ptr<Statement> Parser::assigment_statement()
 {
     // type name = 33 or type name
     Token current = get(0);
 
-    if (type_check(current.get_type()) && get(1).get_type() == token_type::WORDS)
+    if (type_check(current.get_type()) || current.get_type() == token_type::LIST)
     {
-        std::string type = consume(current.get_type()).get_text();
+        std::string type = parse_type();
         std::string name = consume(token_type::WORDS).get_text();
         std::unique_ptr<Expression> expr;
 
         if (match(token_type::EQ))
             expr = expression();
+        else if (type.rfind("список", 0) == 0)
+            expr = std::make_unique<ListExpression>();
         else
             expr = std::make_unique<ValueExpression>(nullptr);
 
@@ -209,6 +229,11 @@ std::unique_ptr<Statement> Parser::for_statement()
 {
     std::string type = consume(get(0).get_type()).get_text();
     std::string name = consume(token_type::WORDS).get_text();
+    if (match(token_type::OF))
+    {
+        auto list_expr = expression();
+        return std::make_unique<ForEachStatement>(type, name, std::move(list_expr), block());
+    }
     consume(token_type::FROM);
     std::unique_ptr<Expression> expr1 = expression();
     consume(token_type::TO);
@@ -253,6 +278,16 @@ std::unique_ptr<Statement> Parser::define_function()
     std::unique_ptr<Statement> body = block();
 
     return std::make_unique<FunctionDefineStatement>(type, name, arg_type, arg_name, std::move(body));
+}
+
+std::unique_ptr<Statement> Parser::index_assignment()
+{
+    std::string name = consume(token_type::WORDS).get_text();
+    consume(token_type::LBRACKET);
+    auto index = expression();
+    consume(token_type::RBRACKET);
+    consume(token_type::EQ);
+    return std::make_unique<IndexAssignStatement>(name, std::move(index), expression());
 }
 
 std::unique_ptr<Expression> Parser::function()
@@ -471,18 +506,28 @@ std::unique_ptr<Expression> Parser::postfix()
 {
     std::unique_ptr<Expression> expr = primary();
 
-    while (match(token_type::DOT))
+    while (true)
     {
-        std::string name = consume(token_type::WORDS).get_text();
-        consume(token_type::LPARENT);
-
-        auto call = std::make_unique<MethodExpression>(std::move(expr), name);
-        while (!match(token_type::RPARENT))
+        if (match(token_type::DOT))
         {
-            call->add_arg(expression());
-            match(token_type::COMMA);
+            std::string name = consume(token_type::WORDS).get_text();
+            consume(token_type::LPARENT);
+
+            auto call = std::make_unique<MethodExpression>(std::move(expr), name);
+            while (!match(token_type::RPARENT))
+            {
+                call->add_arg(expression());
+                match(token_type::COMMA);
+            }
+            expr = std::move(call);
         }
-        expr = std::move(call);
+        else if (match(token_type::LBRACKET))
+        {
+            auto index = expression();
+            consume(token_type::RBRACKET);
+            expr = std::make_unique<IndexExpression>(std::move(expr), std::move(index));
+        }
+        else break;
     }
 
     return expr;
@@ -495,6 +540,18 @@ std::unique_ptr<Expression> Parser::primary()
     if (match(token_type::NUMBER))
     {
         return std::make_unique<ValueExpression>(std::stod(current.get_text()));
+    }
+    if (match(token_type::LBRACKET))
+    {
+        auto list = std::make_unique<ListExpression>();
+        while (!match(token_type::RBRACKET))
+        {
+            if (get(0).get_type() == token_type::eof)
+                throw std::runtime_error("Ты забыл закрыть список знаком ]!");
+            list->add(expression());
+            match(token_type::COMMA);
+        }
+        return list;
     }
     if (match(token_type::TRUE))
         return std::make_unique<ValueExpression>(BoolTag{true});

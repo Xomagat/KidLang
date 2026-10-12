@@ -18,9 +18,13 @@
 
 #include "Value.h"
 #include "NumberValue.h"
+#include "ListValue.h"
 #include "StringValue.h"
 #include "BoolValue.h"
 #include "NothingValue.h"
+
+static ListValue& L(Value& v) { return static_cast<ListValue&>(v); }
+static std::unique_ptr<Value> nothing() { return std::make_unique<NothingValue>(); }
 
 using MethodArgs = std::vector<std::unique_ptr<Value>>;
 using Method = std::function<std::unique_ptr<Value>(Value& self, MethodArgs& args)>;
@@ -30,6 +34,7 @@ inline std::string type_of(Value* v)
     if (dynamic_cast<NumberValue*>(v))  return "число";
     if (dynamic_cast<StringValue*>(v))  return "текст";
     if (dynamic_cast<BoolValue*>(v))    return "условие";
+    if (dynamic_cast<ListValue*>(v))    return "список";
     return "ничего";
 }
 
@@ -118,6 +123,10 @@ class Methods
         t["любой"]["в_текст"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
             need(a, 0, "в_текст");
             return str(s.as_string());
+        };
+        t["любой"]["тип"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 0, "в_текст");
+            return str(type_of(s.clone().get()));
         };
 
         // ---------- текст ----------
@@ -302,6 +311,35 @@ class Methods
             double x = s.as_number();
             if (x <= 0) throw std::runtime_error("Логарифм определён только для положительных чисел!");
             return num(std::log(x));
+        };
+
+        t["список"]["длина"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 0, "длина");
+            return num((double)L(s).data().size());
+        };
+        t["список"]["добавить"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 1, "добавить");
+            L(s).push(std::move(a[0]));
+            return nothing();
+        };
+        t["список"]["удалить"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {   // по номеру
+            need(a, 1, "удалить");
+            auto& d = L(s).data();
+            long long i = to_index(*a[0], "удалить");
+            if (i < 0 || i >= (long long)d.size()) throw std::runtime_error("Такого номера в списке нет!");
+            d.erase(d.begin() + i);
+            return nothing();
+        };
+        t["список"]["пусто"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 0, "пусто");
+            return boolean(L(s).data().empty());
+        };
+        t["список"]["содержит"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 1, "содержит");
+            for (auto& it : L(s).data())
+                if (type_of(it.get()) == type_of(a[0].get()) && it->as_string() == a[0]->as_string())
+                    return boolean(true);
+            return boolean(false);
         };
 
         return t;

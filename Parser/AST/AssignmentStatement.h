@@ -13,6 +13,7 @@
 #include "../../libs/Value.h"
 
 #include "../../libs/BoolValue.h"
+#include "../../libs/ListValue.h"
 #include "../../libs/NumberValue.h"
 #include "../../libs/StringValue.h"
 
@@ -44,6 +45,13 @@ inline std::unordered_map<std::string, std::function<std::unique_ptr<Value>(Valu
 
 inline bool match_type(const std::string& type, Value* expr)
 {
+    if (type.rfind("список", 0) == 0)
+    {
+        auto l = dynamic_cast<ListValue*>(expr);
+        if (!l) return false;
+        return l->elem_type().empty() || l->elem_type() == list_elem_type(type);
+    }
+
     std::unordered_map<std::string, bool> match = {
         {"текст",    dynamic_cast<StringValue*>(expr) != nullptr},
         {"условие",  dynamic_cast<BoolValue*>(expr) != nullptr},
@@ -84,7 +92,14 @@ public:
         if (!match_type(type, result.get()))
             throw std::runtime_error("Неправильный тип для значения!");
 
-        env.define(type, name, std::move(coercers.at(type)(result.get())));
+        std::unique_ptr<Value> stored;
+        if (auto it = coercers.find(type); it != coercers.end())
+            stored = it->second(result.get());
+        else
+            stored = std::move(result);
+        if (auto* l = dynamic_cast<ListValue*>(stored.get()))
+            l->set_elem_type(list_elem_type(type));
+        env.define(type, name, std::move(stored));
     }
 };
 

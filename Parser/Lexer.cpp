@@ -11,7 +11,7 @@
 // funcs
 Lexer::Lexer(const std::string& source)
 {
-    OPERATION_CHARS = U"+-*%/=!()<>,.";
+    OPERATION_CHARS = U"+-*%/=!()[]<>,.";
     SINGLE_OPERATORS = {
         {U"+",  token_type::PLUS},
         {U"-",  token_type::MINUS},
@@ -31,6 +31,8 @@ Lexer::Lexer(const std::string& source)
         {U"!",  token_type::EM},
         {U"(",  token_type::LPARENT},
         {U")",  token_type::RPARENT},
+        {U"[", token_type::LBRACKET},
+        {U"]", token_type::RBRACKET},
         {U">",  token_type::GT},
         {U"<",  token_type::LT},
         {U"==", token_type::EQEQ},
@@ -277,6 +279,8 @@ void Lexer::tokenize_word()
         {U"не",       token_type::NOT},
         {U"преврати", token_type::CONVERT},
         {U"в",        token_type::IN},
+        {U"список", token_type::LIST},
+        {U"из",     token_type::OF},
     };
 
     auto it = keywords.find(buffer);

@@ -20,6 +20,7 @@
 #include "AST/FunctionalExpression.h"
 #include "AST/ConvertExpression.h"
 #include "AST/MethodExpression.h"
+#include "AST/ListExpression.h"
 #include "AST/Expression.h"
 
 #include "AST/AssignmentStatement.h"
@@ -46,12 +47,14 @@ private:
     std::unique_ptr<Statement> block();
 
     std::unique_ptr<Statement> statement();
+    std::string parse_type();
     std::unique_ptr<Statement> assigment_statement();
     std::unique_ptr<Statement> if_else();
     std::unique_ptr<Statement> repeat_statement();
     std::unique_ptr<Statement> while_statement();
     std::unique_ptr<Statement> for_statement();
     std::unique_ptr<Statement> define_function();
+    std::unique_ptr<Statement> index_assignment();
 
     std::unique_ptr<Expression> function();
     std::unique_ptr<Expression> expression();

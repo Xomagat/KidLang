@@ -43,6 +43,8 @@ enum token_type
     NOT,
     CONVERT,
     IN,
+    LIST,
+    OF,
 
     // op
     PLUS,
@@ -62,6 +64,8 @@ enum token_type
     GTEQ,
     LPARENT,
     RPARENT,
+    LBRACKET,
+    RBRACKET,
     COMMA,
     DOT,
 
@@ -85,13 +89,13 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {REPEAT, "повтори"}, {ONCE, "раз/раза"}, {WHILE, "пока"},
     {BREAK, "стоп"}, {CONTINUE, "продолжи"}, {DEFINE, "рецепт"}, {RETURN, "верни"},
     {RETURNED, "вернет/вернёт"}, {NOTHING, "ничего"}, {AND, "и"}, {OR, "или"},
-    {NOT, "не"}, {CONVERT, "преврати"}, {IN, "в"},
+    {NOT, "не"}, {CONVERT, "преврати"}, {IN, "в"}, {LIST, "список"}, {OF, "из"},
     {GET, "получи"}, {FOR, "для"}, {FROM, "от"}, {TO, "до"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
     {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"}, {COMMA, ","}, {DOT, "."},
     {PLUS, "+"}, {MINUS, "-"}, {MULT, "*"}, {DIV, "/"}, {POW, "**"}, {EQ, "="},
     {INTDIV, "//"}, {PLUSEQ, "+="}, {MINUSEQ, "-="}, {MULTEQ, "*="}, {DIVEQ, "/="}, {POWEQ, "**="},
-    {INTDIVEQ, "//="},
+    {INTDIVEQ, "//="}, {LBRACKET, "["}, {RBRACKET, "]"},
     {EQEQ, "=="}, {NOEQ, "!="}, {GT, ">"}, {LT, "<"}, {GTEQ, ">="}, {LTEQ, "<="},
     {LPARENT, "("}, {RPARENT, ")"}, {EM, "!"},
     {INDENT, "<отступ>"}, {DEDENT, "<конец отступа>"},
