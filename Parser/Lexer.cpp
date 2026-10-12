@@ -77,6 +77,13 @@ std::vector<Token> Lexer::tokenize()
             continue;
         }
 
+        if (current == U';')
+        {
+            while (pos < length && peek(0) != U'\n')
+                next();
+            continue;
+        }
+
         if (current == U'"')
             tokenize_string();
         else if (is_digit(current))
@@ -128,6 +135,13 @@ void Lexer::handle_indentation()
         {
             indent += (peek(0) == U'\t') ? 4 : 1;
             next();
+        }
+
+        if (peek(0) == U';')
+        {
+            while (pos < length && peek(0) != U'\n')
+                next();
+            continue;
         }
 
         if (peek(0) == U'\r')
