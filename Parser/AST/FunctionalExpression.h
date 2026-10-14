@@ -30,37 +30,28 @@ public:
     std::unique_ptr<Value> eval(Environment& env) const override
     {
         std::vector<std::unique_ptr<Value>> values;
-
-        for (const auto& arg : args)
-        {
-            values.push_back(arg->eval(env));
-        }
+        for (const auto& arg : args) values.push_back(arg->eval(env));
 
         Function* function = Functions::get(name);
 
         if (auto f = dynamic_cast<UserDefineFunction*>(function))
         {
-            if (args.size() != f->get_names_size()) throw std::runtime_error("Argument count mismatch!");
+            if (values.size() != (size_t)f->get_names_size())
+                throw std::runtime_error("Рецепту «" + name + "» нужно аргументов: "
+                    + std::to_string(f->get_names_size()) + ", а ты дал: " + std::to_string(values.size()) + "!");
 
             Environment local(&env);
 
             for (int i = 0; i < f->get_names_size(); i++)
             {
                 if (!match_type(f->get_type_index(i), values[i].get()))
-                    throw std::runtime_error("Uncorrected expression type!");
-
+                    throw std::runtime_error("Рецепт «" + name + "» ждёт «" + f->get_type_index(i)
+                        + "» в «" + f->get_name_index(i) + "», а ты дал «" + type_name(values[i].get()) + "»!");
                 local.define(f->get_type_index(i), f->get_name_index(i), std::move(values[i]));
             }
 
             std::unique_ptr<Value> result = f->execute(local, {});
-
-            if (f->get_type() == "ничего")
-                return result;
-
-            if (!result && f->get_type() != "ничего")
-                throw std::runtime_error("Функция '" + name + "' не вернула значение!");
-            if (!match_type(f->get_type(), result.get()))
-                throw std::runtime_error("Функция '" + name + "' вернула значение не того типа!");
+            if (!result) return std::make_unique<NothingValue>();
             return result;
         }
 

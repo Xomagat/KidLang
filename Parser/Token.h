@@ -15,10 +15,12 @@ private:
     std::string text;   // value
     token_type type;     // type
 
+    int line;
+
 public:
     // constructors
     Token();
-    Token(token_type type, std::string text);
+    Token(token_type type, std::string text, int line);
 
     // getters
     std::string get_text();
@@ -27,6 +29,8 @@ public:
     // setters
     void set_text(std::string text);
     void set_type(token_type type);
+
+    int get_line();
 };
 
 #endif // KID_TOKEN_H

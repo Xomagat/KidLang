@@ -9,7 +9,7 @@
 // funcs
 Parser::Parser(std::vector<Token> tokens)
 {
-    eof = Token(token_type::eof, "");
+    eof = Token(token_type::eof, "", tokens.empty() ? 1 : tokens.back().get_line());
 
     this->tokens = tokens;
 
@@ -34,7 +34,7 @@ std::unique_ptr<Statement> Parser::block()
 {
     std::vector<std::unique_ptr<Statement>> statements;
 
-    consume(token_type::INDENT);
+    consume(token_type::INDENT, "после этой строки нужен отступ. Сдвинь следующие строки вправо пробелами!");
 
     while (!match(token_type::DEDENT) && !match(token_type::eof))
         statements.push_back(statement());
@@ -48,15 +48,20 @@ std::unique_ptr<Statement> Parser::statement()
     {
         case token_type::SHOW: {
             consume(token_type::SHOW);
-            consume(token_type::LPARENT);
+            consume(token_type::LPARENT, "после «покажи» нужны скобки, например: покажи(5)");
             std::unique_ptr<Expression> expr = expression();
-            consume(token_type::RPARENT);
+            consume(token_type::RPARENT, "ты забыл закрыть скобку «)» после «покажи»!");
             return std::make_unique<ShowStatement>(std::move(expr));
         }
         case token_type::IF: {
             consume(token_type::IF);
             return if_else();
         }
+
+        case token_type::ELIF:
+        case token_type::ELSE:
+            throw std::runtime_error(at() + "«" + get(0).get_text() + "» можно писать только после «если»!");
+
         case token_type::REPEAT: {
             consume(token_type::REPEAT);
             return repeat_statement();
@@ -93,6 +98,8 @@ std::unique_ptr<Statement> Parser::statement()
         case token_type::LOGIC:
             return assigment_statement();
 
+        case token_type::INDENT:
+            throw std::runtime_error(at() + "лишний отступ. Отступ нужен только после если, пока, повтори, для и рецепт!");
 
         case token_type::WORDS:
             if (get(1).get_type() == token_type::LBRACKET)
@@ -102,9 +109,10 @@ std::unique_ptr<Statement> Parser::statement()
                 return std::make_unique<FunctionStatement>(postfix());
             return assigment_statement();
 
-        default: {
-            throw std::runtime_error("Неопределенный токен: " + token_string[get(0).get_type()]);
-        }
+        default:
+            throw std::runtime_error(at() + "я не понял, с чего начинается эта команда: «"
+                + (get(0).get_text().empty() ? describe(get(0).get_type()) : get(0).get_text())
+                + "». Команда начинается с «покажи», «если», «повтори», «пока», «для», «рецепт», «верни», типа или имени переменной.");
     }
 }
 
@@ -128,7 +136,7 @@ std::string Parser::parse_type()
 
     Token t = get(0);
     if (!type_check(t.get_type()))
-        throw std::runtime_error("Здесь нужен тип: число, текст, условие или список!");
+        throw std::runtime_error(at() + "здесь нужен тип: число, текст, условие или список!");
     pos++;
     return t.get_text();
 }
@@ -184,7 +192,8 @@ std::unique_ptr<Statement> Parser::assigment_statement()
         }
     }
 
-    throw std::runtime_error("При объявлении переменной, было пропущено имя или тип!");
+    throw std::runtime_error(at() + "я не понял, что делать с «" + current.get_text()
+    + "». После имени жду «=», «+=», «-=», «*=», «/=», скобки «( )» или номер «[ ]».");
 }
 
 std::unique_ptr<Statement> Parser::if_else()
@@ -227,24 +236,25 @@ std::unique_ptr<Statement> Parser::while_statement()
 
 std::unique_ptr<Statement> Parser::for_statement()
 {
-    std::string type = consume(get(0).get_type()).get_text();
-    std::string name = consume(token_type::WORDS).get_text();
+    std::string type = parse_type();
+    std::string name = consume(token_type::WORDS, "после типа нужно имя, например: для число i от 1 до 10").get_text();
     if (match(token_type::OF))
     {
         auto list_expr = expression();
         return std::make_unique<ForEachStatement>(type, name, std::move(list_expr), block());
     }
-    consume(token_type::FROM);
+    consume(token_type::FROM, "после имени жду «от» (для чисел) или «из» (для списка)");
     std::unique_ptr<Expression> expr1 = expression();
-    consume(token_type::TO);
+    consume(token_type::TO, "после начала жду слово «до»");
     std::unique_ptr<Expression> expr2 = expression();
     double to_add = 1;
 
     if (match(token_type::ADDTO))
-        if (get(0).get_type() != token_type::MINUS)
-            to_add = std::stod(consume(token_type::NUMBER).get_text());
-        else
-            to_add = -std::stod(consume(token_type::NUMBER).get_text());
+    {
+        bool neg = match(token_type::MINUS);
+        double n = std::stod(consume(token_type::NUMBER, "после «добавляя» нужно число").get_text());
+        to_add = neg ? -n : n;
+    }
 
     std::unique_ptr<Statement> var = std::make_unique<AssignmentStatement>(type, name, std::move(expr1));
 
@@ -257,8 +267,8 @@ std::unique_ptr<Statement> Parser::for_statement()
 std::unique_ptr<Statement> Parser::define_function()
 {
     std::string type = "ничего";
-    std::string name = consume(token_type::WORDS).get_text();
-    consume(token_type::LPARENT);
+    std::string name = consume(token_type::WORDS, "после «рецепт» нужно имя рецепта").get_text();
+    consume(token_type::LPARENT, "после имени рецепта нужны скобки, например: рецепт привет()");
 
     std::vector<std::string> arg_type;
     std::vector<std::string> arg_name;
@@ -267,13 +277,13 @@ std::unique_ptr<Statement> Parser::define_function()
 
     while (!match(token_type::RPARENT))
     {
-        arg_type.push_back(consume(get(0).get_type()).get_text());
-        arg_name.push_back(consume(token_type::WORDS).get_text());
+        arg_type.push_back(parse_type());
+        arg_name.push_back(consume(token_type::WORDS, "после типа аргумента нужно его имя").get_text());
         match(token_type::COMMA);
     }
 
     if (match(token_type::RETURNED))
-        type = consume(get(0).get_type()).get_text();
+        type = match(token_type::NOTHING) ? "ничего" : parse_type();
 
     std::unique_ptr<Statement> body = block();
 
@@ -547,7 +557,7 @@ std::unique_ptr<Expression> Parser::primary()
         while (!match(token_type::RBRACKET))
         {
             if (get(0).get_type() == token_type::eof)
-                throw std::runtime_error("Ты забыл закрыть список знаком ]!");
+                throw std::runtime_error(at() + "ты забыл закрыть список знаком «]»!");
             list->add(expression());
             match(token_type::COMMA);
         }
@@ -581,7 +591,7 @@ std::unique_ptr<Expression> Parser::primary()
 
         Token t = get(0);
         if (!type_check(t.get_type()))
-            throw std::runtime_error("После 'в' нужно написать тип: число, текст или условие!");
+            throw std::runtime_error(at() + "после «в» нужно написать тип: число, текст или условие!");
         pos++;
 
         return std::make_unique<ConvertExpression>(t.get_text(), std::move(inner));
@@ -599,11 +609,15 @@ std::unique_ptr<Expression> Parser::primary()
     if (match(token_type::LPARENT))
     {
         std::unique_ptr<Expression> result = expression();
-        match(token_type::RPARENT);
+        consume(token_type::RPARENT, "ты забыл закрыть скобку «)»!");
         return result;
     }
 
-    throw std::runtime_error("Неизвестное выражение! " + current.get_text());
+    if (current.get_type() == token_type::eof)
+        throw std::runtime_error("Программа закончилась, а я ещё жду число, текст или имя. Ты не дописал строку?");
+    throw std::runtime_error(at() + "я не понял «"
+        + (current.get_text().empty() ? describe(current.get_type()) : current.get_text())
+        + "». Здесь должно быть число, текст, имя переменной или выражение в скобках.");
 }
 
 Token Parser::get(int relative_position)
@@ -626,13 +640,29 @@ bool Parser::match(token_type type)
     return true;
 }
 
+std::string Parser::at()
+{
+    return "В строке " + std::to_string(get(0).get_line()) + ": ";
+}
+
 Token Parser::consume(token_type type)
 {
     Token t = get(0);
-
     if (type != t.get_type())
-        throw std::runtime_error("Слово " + token_string[t.get_type()] + " не совпадает c " + token_string[type]);
+    {
+        std::string found = t.get_text().empty() ? describe(t.get_type()) : t.get_text();
+        throw std::runtime_error(at() + "я ждал «" + describe(type) + "», а нашёл «" + found
+            + "». Может, ты что-то забыл написать?");
+    }
+    pos++;
+    return t;
+}
 
+Token Parser::consume(token_type type, const std::string& hint)
+{
+    Token t = get(0);
+    if (type != t.get_type())
+        throw std::runtime_error(at() + hint);
     pos++;
     return t;
 }

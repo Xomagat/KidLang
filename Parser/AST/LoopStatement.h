@@ -93,7 +93,9 @@ public:
     void execute(Environment& env) const override
     {
         if (type != "число")
-            throw std::runtime_error("Цикл 'для' работает только с числами!");
+            throw std::runtime_error("Цикл «для ... от ... до» работает только с числами. Для списка пиши: для число x из список");
+        if (step == 0)
+            throw std::runtime_error("Шаг в цикле «для» не может быть нулём, иначе я никогда не закончу!");
 
         Environment loop_env(&env);
         var->execute(loop_env);
@@ -111,7 +113,7 @@ public:
                 body->execute(loop_env);
             }
             catch (const BreakStatement&)    { break; }
-            catch (const ContinueStatement&) { continue; }
+            catch (const ContinueStatement&) {  }
 
             double next = loop_env.revolve(name)->value->as_number() + step;
             loop_env.assign(name, std::make_unique<NumberValue>(next));

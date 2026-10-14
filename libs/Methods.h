@@ -47,7 +47,8 @@ class Methods
     static void need(const MethodArgs& a, size_t n, const std::string& name)
     {
         if (a.size() != n)
-            throw std::runtime_error("Метод '" + name + "' ждёт аргументов: " + std::to_string(n));
+            throw std::runtime_error("Команде «" + name + "» нужно аргументов: " + std::to_string(n)
+                + ", а ты дал: " + std::to_string(a.size()) + "!");
     }
 
     static std::unique_ptr<Value> num(double x) { return std::make_unique<NumberValue>(x); }
@@ -111,7 +112,7 @@ class Methods
     {
         double d = v.as_number();
         if (d != std::floor(d))
-            throw std::runtime_error("Метод '" + name + "' ждёт целое число!");
+            throw std::runtime_error("Команде «" + name + "» нужно целое число, например 2, а не 2.5!");
         return (long long)d;
     }
 
@@ -125,8 +126,8 @@ class Methods
             return str(s.as_string());
         };
         t["любой"]["тип"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
-            need(a, 0, "в_текст");
-            return str(type_of(s.clone().get()));
+            need(a, 0, "тип");
+            return str(type_name(&s));
         };
 
         // ---------- текст ----------
@@ -204,7 +205,7 @@ class Methods
             auto c = chars(s.as_string());
             long long i = to_index(*a[0], "символ");
             if (i < 0 || i >= (long long)c.size())
-                throw std::runtime_error("Индекс символа вне границ текста!");
+                throw std::runtime_error("В тексте всего " + std::to_string(c.size()) + " символов, а ты просишь символ номер " + std::to_string(i) + "! Номера начинаются с 0.");
             return str(c[i]);
         };
         // подтекст(начало, длина) — индексация с нуля
@@ -214,7 +215,8 @@ class Methods
             long long from = to_index(*a[0], "подтекст");
             long long len  = to_index(*a[1], "подтекст");
             if (from < 0 || len < 0 || from > (long long)c.size())
-                throw std::runtime_error("Неверные границы для 'подтекст'!");
+                throw std::runtime_error("Для «подтекст» начало и длина не могут быть меньше 0, а начало не может быть дальше конца текста!");
+
             size_t to = std::min<size_t>(c.size(), from + len);
             return str(join(c, from, to));
         };
@@ -241,7 +243,7 @@ class Methods
             }
             catch (const std::exception&)
             {
-                throw std::runtime_error("Текст «" + x + "» нельзя превратить в число!");
+                throw std::runtime_error("Я не могу превратить «" + x + "» в число!");
             }
         };
 
@@ -257,7 +259,7 @@ class Methods
         t["число"]["корень"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
             need(a, 0, "корень");
             double x = s.as_number();
-            if (x < 0) throw std::runtime_error("Корень из отрицательного числа!");
+            if (x < 0) throw std::runtime_error("Нельзя взять корень из отрицательного числа!");
             return num(std::sqrt(x));
         };
         t["число"]["степень"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
@@ -295,7 +297,7 @@ class Methods
         t["число"]["ограничить"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
             need(a, 2, "ограничить");
             double lo = a[0]->as_number(), hi = a[1]->as_number();
-            if (lo > hi) throw std::runtime_error("В 'ограничить' минимум больше максимума!");
+            if (lo > hi) throw std::runtime_error("В «ограничить» первое число должно быть меньше второго!");
             return num(std::clamp(s.as_number(), lo, hi));
         };
         t["число"]["синус"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
@@ -309,7 +311,7 @@ class Methods
         t["число"]["логарифм"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
             need(a, 0, "логарифм");
             double x = s.as_number();
-            if (x <= 0) throw std::runtime_error("Логарифм определён только для положительных чисел!");
+            if (x <= 0) throw std::runtime_error("Логарифм есть только у чисел больше нуля!");
             return num(std::log(x));
         };
 
@@ -326,7 +328,7 @@ class Methods
             need(a, 1, "удалить");
             auto& d = L(s).data();
             long long i = to_index(*a[0], "удалить");
-            if (i < 0 || i >= (long long)d.size()) throw std::runtime_error("Такого номера в списке нет!");
+            if (i < 0 || i >= (long long)d.size()) throw std::runtime_error("В списке нет элемента с таким номером! Номера начинаются с 0.");
             d.erase(d.begin() + i);
             return nothing();
         };
@@ -371,7 +373,7 @@ public:
                 if (m != t->second.end()) return m->second;
             }
         }
-        throw std::runtime_error("У типа «" + type + "» нет метода «" + name + "»!");
+        throw std::runtime_error("У типа «" + type + "» нет команды «" + name + "». Проверь, как ты её написал!");
     }
 
     // ---------- встроенные переменные (константы) ----------

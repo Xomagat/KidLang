@@ -16,6 +16,14 @@
 #include "BoolValue.h"
 #include "NothingValue.h"
 
+inline std::string elements_word(long long n)
+{
+    long long a = n % 100, b = n % 10;
+    if ((a >= 11 && a <= 14) || b == 0 || b >= 5) return "элементов";
+    if (b == 1) return "элемент";
+    return "элемента";
+}
+
 inline std::string type_name(const Value* v);
 
 class ListValue : public Value
@@ -43,7 +51,7 @@ public:
         std::string t = type_name(v);
         if (elem.empty()) elem = t;
         else if (elem != t)
-            throw std::runtime_error("В списке «" + elem + "» не может лежать «" + t + "»!");
+            throw std::runtime_error("В этом списке лежат «" + elem + "», а ты кладёшь «" + t + "»!");
     }
     void push(std::unique_ptr<Value> v) { check(v.get()); items->push_back(std::move(v)); }
 

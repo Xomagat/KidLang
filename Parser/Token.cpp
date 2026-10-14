@@ -13,11 +13,13 @@ Token::Token()
     this->text = "";
 }
 
-Token::Token(token_type type, std::string text)
+Token::Token(token_type type, std::string text, int line)
 {
     this->text = text;
     this->type = type;
+    this->line = line;
 }
+int Token::get_line() { return line; }
 
 std::string Token::get_text()
 {

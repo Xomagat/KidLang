@@ -32,8 +32,10 @@ public:
 
     static Function* get(const std::string& name)
     {
-        if (!is_exist(name)) throw std::runtime_error("Unknown function: " + name + '!');
-        return functions.at(name).get();
+        auto it = functions.find(name);
+        if (it == functions.end())
+            throw std::runtime_error("Я не знаю рецепт «" + name + "». Ты его написал? Или опечатался?");
+        return it->second.get();
     }
 
     static void define(const std::string& name, std::unique_ptr<Function> function)

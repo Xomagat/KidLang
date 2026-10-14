@@ -7,7 +7,9 @@
 
 #pragma once
 #include <string>
-#include <sstream>
+#include <charconv>
+#include <cmath>
+#include <string>
 
 #include "Value.h"
 
@@ -24,11 +26,22 @@ public:
         return value;
     }
 
+
     std::string as_string() const override
     {
-        std::ostringstream ss;
-        ss << value;
-        return ss.str();
+        if (std::isnan(value)) return "не число";
+        if (std::isinf(value)) return value > 0 ? "бесконечность" : "-бесконечность";
+
+        if (value == std::floor(value) && std::fabs(value) < 1e19)
+        {
+            char buf[32];
+            std::snprintf(buf, sizeof(buf), "%.0f", value);
+            return buf;
+        }
+
+        char buf[64];
+        auto res = std::to_chars(buf, buf + sizeof(buf), value, std::chars_format::general, 15);
+        return std::string(buf, res.ptr);
     }
 
     bool as_bool() const override

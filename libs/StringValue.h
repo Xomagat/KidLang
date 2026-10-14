@@ -20,17 +20,24 @@ public:
 
     double as_number() const override
     {
-        return std::stod(value);
+        try
+        {
+            size_t used = 0;
+            double d = std::stod(value, &used);
+            if (used != value.size()) throw std::invalid_argument(value);
+            return d;
+        }
+        catch (const std::exception&)
+        {
+            throw std::runtime_error("Я не могу превратить текст «" + value + "» в число!");
+        }
     }
+    
+    bool as_bool() const override { return !value.empty(); }
 
     std::string as_string() const override
     {
         return value;
-    }
-
-    bool as_bool() const override
-    {
-        return value.compare("");
     }
 
     std::unique_ptr<Value> clone() const override

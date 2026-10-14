@@ -14,7 +14,7 @@ class ContinueStatement : public Statement, public ControlFlowSignal
 private:
 
 public:
-    explicit ContinueStatement() : ControlFlowSignal("'продолжи' находится за пределом цикла!") {}
+    explicit ContinueStatement() : ControlFlowSignal("«продолжи» можно писать только внутри цикла!") {}
 
     void execute(Environment &env) const override
     {

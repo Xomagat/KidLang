@@ -77,22 +77,19 @@ public:
 
             if (type == "ничего")
             {
-                if (re.take_value() == nullptr)
-                    return result;
-
+                if (!result || dynamic_cast<NothingValue*>(result.get())) return nullptr;
                 throw std::runtime_error("Этот рецепт ничего не обещал вернуть, а ты вернул «"
-                                     + value_type_name(result.get()) + "»!");
+                    + type_name(result.get()) + "». Напиши после скобок, например: вернет число");
             }
 
-            if (value_type_name(result.get()) != type)
+            if (!match_type(type, result.get()))
                 throw std::runtime_error("Рецепт обещал вернуть «" + type + "», а ты вернул «"
-                                         + value_type_name(result.get()) + "»!");
-
+                    + type_name(result.get()) + "»!");
             return result;
         }
 
         if (type != "ничего")
-            throw std::runtime_error("Рецепт обещал вернуть «" + type + "», но ничего не вернул!");
+            throw std::runtime_error("Рецепт обещал вернуть «" + type + "», но ничего не вернул. Забыл написать «верни»?");
 
         return nullptr;
     }

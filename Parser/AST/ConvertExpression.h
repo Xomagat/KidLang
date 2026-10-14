@@ -64,7 +64,7 @@ public:
             return std::make_unique<BoolValue>(v->as_bool());
         }
 
-        throw std::runtime_error("Я не умею превращать в " + type + "!");
+        throw std::runtime_error("Я не могу превратить \"" + v->as_string() + "\" в условие! Нужно \"верно\" или \"неверно\".");
     }
 };
 

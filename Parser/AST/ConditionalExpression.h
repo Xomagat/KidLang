@@ -31,54 +31,28 @@ public:
 
     std::unique_ptr<Value> eval(Environment& env) const override
     {
-        std::unique_ptr<Value> value1 = expr1->eval(env);
-        std::unique_ptr<Value> value2 = expr2->eval(env);
+        auto v1 = expr1->eval(env);
 
-        if (op == "и")
+        if (op == "и")   return std::make_unique<BoolValue>(v1->as_bool() && expr2->eval(env)->as_bool());
+        if (op == "или") return std::make_unique<BoolValue>(v1->as_bool() || expr2->eval(env)->as_bool());
+
+        auto v2 = expr2->eval(env);
+
+        if (dynamic_cast<StringValue*>(v1.get()))
         {
-            auto v1 = expr1->eval(env);
-            if (!v1->as_bool()) return std::make_unique<BoolValue>(false);
-            return std::make_unique<BoolValue>(expr2->eval(env)->as_bool());
-        }
-        if (op == "или")
-        {
-            auto v1 = expr1->eval(env);
-            if (v1->as_bool()) return std::make_unique<BoolValue>(true);
-            return std::make_unique<BoolValue>(expr2->eval(env)->as_bool());
+            if (op == "==") return std::make_unique<BoolValue>(v1->as_string() == v2->as_string());
+            if (op == "!=") return std::make_unique<BoolValue>(v1->as_string() != v2->as_string());
+            throw std::runtime_error("Тексты можно сравнивать только знаками «==» и «!=»!");
         }
 
-        if (auto s1 = dynamic_cast<StringValue*>(value1.get()))
-        {
-            std::string s2 = value2->as_string();
-
-            if (op == "==")
-            {
-                return std::make_unique<BoolValue>(s1->as_string() == s2);
-            }
-            if (op == "!=")
-            {
-                return std::make_unique<BoolValue>(s1->as_string() != s2);
-            }
-
-            throw std::runtime_error("Я не знаю такого оператора!");
-        }
-
-        auto n1 = value1->as_number();
-        auto n2 = value2->as_number();
-
-        std::unordered_map<std::string, bool> operators = {
-            {"==", n1 == n2},
-            {"!=", n1 != n2},
-            {"<=", n1 <= n2},
-            {">=", n1 >= n2},
-            {"<", n1 < n2},
-            {">", n1 > n2},
-        };
-
-        auto it = operators.find(op);
-        if (it == operators.end())
-            throw std::runtime_error("Я не знаю такого оператора!");
-        return std::make_unique<BoolValue>(it->second);
+        double a = v1->as_number(), b = v2->as_number();
+        if (op == "==") return std::make_unique<BoolValue>(a == b);
+        if (op == "!=") return std::make_unique<BoolValue>(a != b);
+        if (op == "<")  return std::make_unique<BoolValue>(a < b);
+        if (op == ">")  return std::make_unique<BoolValue>(a > b);
+        if (op == "<=") return std::make_unique<BoolValue>(a <= b);
+        if (op == ">=") return std::make_unique<BoolValue>(a >= b);
+        throw std::runtime_error("Я не знаю такого знака сравнения!");
     }
 };
 

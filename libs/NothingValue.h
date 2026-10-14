@@ -18,19 +18,12 @@ private:
 public:
     explicit NothingValue() {}
 
-    double as_number() const override
-    {
-        return NULL;
-    }
+    double as_number() const override { throw std::runtime_error("«ничего» нельзя превратить в число!"); }
+    bool as_bool() const override { return false; }
 
     std::string as_string() const override
     {
         return "ничего";
-    }
-
-    bool as_bool() const override
-    {
-        return NULL;
     }
 
     std::unique_ptr<Value> clone() const override

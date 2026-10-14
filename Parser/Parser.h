@@ -76,7 +76,9 @@ private:
 
     bool match(token_type type);
 
+    std::string at();
     Token consume(token_type type);
+    Token consume(token_type type, const std::string& hint);
 
 public:
     Parser(std::vector<Token> tokens);

@@ -39,7 +39,8 @@ add_executable(kid main.cpp
         libs/Methods.h
         Parser/AST/MethodExpression.h
         libs/ListValue.h
-        Parser/AST/ListExpression.h)
+        Parser/AST/ListExpression.h
+        libs/Console.h)
 
 if (WIN32)
     target_link_options(kid PRIVATE -static-libgcc -static-libstdc++)

@@ -86,7 +86,7 @@ std::vector<Token> Lexer::tokenize()
             continue;
         }
 
-        if (current == U'"')
+        if (current == U'"' || current == U'\'')
             tokenize_string();
         else if (is_digit(current))
             tokenize_number();
@@ -94,6 +94,8 @@ std::vector<Token> Lexer::tokenize()
             tokenize_word();
         else if (OPERATION_CHARS.find(current) != std::u32string::npos)
             tokenize_operation();
+        else
+            throw std::runtime_error("Я не знаю, что такое:" + std::to_string(current) + "!");
     }
 
     while (indent_stack.size() > 1)
@@ -115,8 +117,7 @@ void Lexer::tokenize_number()
         if (current == U'.')
         {
             if (buffer.find(U'.') != std::u32string::npos)
-                throw std::runtime_error("Ой, кажется, в строчке: " + std::to_string(line)
-                    + " не правильно написанно число! Я не могу его запомнить.");
+                throw std::runtime_error("В числе две точки. Так писать нельзя, я не пойму, какое это число!");
         }
         else if (!is_digit(current))
             break;
@@ -174,7 +175,7 @@ void Lexer::handle_indentation()
             }
 
             if (indent != indent_stack.back())
-                throw std::runtime_error("Ошибка отступа в строке " + std::to_string(line) + "! Отступы должны совпадать.");
+                throw std::runtime_error("Этот отступ не такой, как у строк выше. Проверь пробелы в начале строки!");
         }
 
         return;
@@ -208,6 +209,10 @@ void Lexer::tokenize_string()
         buffer.push_back(current);
         current = next();
     }
+
+    if (current != U'"')
+        throw std::runtime_error("Ты открыл кавычку, а закрыть забыл!");
+
     next(); // skip "
 
     add_token(token_type::TEXT, buffer);
@@ -232,8 +237,8 @@ void Lexer::tokenize_operation()
         }
     }
 
-    throw std::runtime_error("Ой, я не знаю: " + encode_utf8(std::u32string(1, peek(0)))
-        + "! Ты уверен, что написал правильно?");
+    throw std::runtime_error("Я не знаю знак «"
+    + encode_utf8(std::u32string(1, peek(0))) + "». Ты уверен, что написал правильно?");
 }
 
 void Lexer::tokenize_word()
@@ -263,6 +268,7 @@ void Lexer::tokenize_word()
         {U"рецепт",   token_type::DEFINE},
         {U"верни",    token_type::RETURN},
         {U"вернет",   token_type::RETURNED},
+        {U"вернёт",   token_type::RETURNED},
         {U"ничего",   token_type::NOTHING},
         {U"для",      token_type::FOR},
         {U"от",       token_type::FROM},
@@ -301,7 +307,7 @@ void Lexer::add_token(token_type type)
 
 void Lexer::add_token(token_type type, const std::u32string& text)
 {
-    tokens.emplace_back(type, encode_utf8(text));
+    tokens.emplace_back(type, encode_utf8(text), line);
 }
 
 char32_t Lexer::next()
@@ -355,17 +361,17 @@ std::u32string Lexer::decode_utf8(const std::string& input)
         }
         else
         {
-            throw std::runtime_error("Некорректная UTF-8 последовательность в коде!");
+            throw std::runtime_error("В файле есть странный символ! Прости но я не знаю, что он обозначает. :(");
         }
 
         if (i + len > n)
-            throw std::runtime_error("Оборванная UTF-8 последовательность в коде!");
+            throw std::runtime_error("Кажется код оборвался!");
 
         for (int k = 1; k < len; k++)
         {
             unsigned char cc = static_cast<unsigned char>(input[i + k]);
             if ((cc & 0xC0) != 0x80)
-                throw std::runtime_error("Некорректная UTF-8 последовательность в коде!");
+                throw std::runtime_error("В файле есть странный символ! Прости но я не знаю, что он обозначает. :(");
             cp = (cp << 6) | (cc & 0x3F);
         }
 

@@ -92,14 +92,21 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {NOT, "не"}, {CONVERT, "преврати"}, {IN, "в"}, {LIST, "список"}, {OF, "из"},
     {GET, "получи"}, {FOR, "для"}, {FROM, "от"}, {TO, "до"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
-    {LOGIC, "ответ"}, {TRUE, "да"}, {FALSE, "нет"}, {COMMA, ","}, {DOT, "."},
+    {ADDTO, "добавляя"}, {MOD, "%"}, {MODEQ, "%="},
+    {LOGIC, "условие"}, {TRUE, "верно"}, {FALSE, "неверно"}, {COMMA, ","}, {DOT, "."},
     {PLUS, "+"}, {MINUS, "-"}, {MULT, "*"}, {DIV, "/"}, {POW, "**"}, {EQ, "="},
     {INTDIV, "//"}, {PLUSEQ, "+="}, {MINUSEQ, "-="}, {MULTEQ, "*="}, {DIVEQ, "/="}, {POWEQ, "**="},
     {INTDIVEQ, "//="}, {LBRACKET, "["}, {RBRACKET, "]"},
     {EQEQ, "=="}, {NOEQ, "!="}, {GT, ">"}, {LT, "<"}, {GTEQ, ">="}, {LTEQ, "<="},
     {LPARENT, "("}, {RPARENT, ")"}, {EM, "!"},
-    {INDENT, "<отступ>"}, {DEDENT, "<конец отступа>"},
-    {eof, "<конец файла>"}
+    {INDENT, "отступ"}, {DEDENT, "конец отступа"},
+    {eof, "конец файла"}
 };
+
+inline std::string describe(token_type t)
+{
+    auto it = token_string.find(t);
+    return it == token_string.end() ? "?" : it->second;
+}
 
 #endif // KID_TOKENTYPE_H

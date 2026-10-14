@@ -22,7 +22,7 @@ class BreakStatement : public Statement, public ControlFlowSignal
 private:
 
 public:
-    explicit BreakStatement() : ControlFlowSignal("'стоп' находится за пределом цикла!") {}
+    explicit BreakStatement() : ControlFlowSignal("«стоп» можно писать только внутри цикла!") {}
 
     void execute(Environment &env) const override
     {

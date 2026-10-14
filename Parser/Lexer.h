@@ -27,7 +27,8 @@ private:
 
     int pos;                    // position now
     int length;                 // code length (в code points)
-    int line = 1;               // line now
+
+    int line = 1;
 
     // utf-8 helpers
     static std::u32string decode_utf8(const std::string& input);
