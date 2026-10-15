@@ -87,7 +87,10 @@ std::unique_ptr<Statement> Parser::statement()
             return define_function();
         }
         case token_type::RETURN: {
-            consume(token_type::RETURN);
+            Token ret = consume(token_type::RETURN);
+            if (get(0).get_type() == token_type::DEDENT || get(0).get_type() == token_type::eof
+                || get(0).get_line() != ret.get_line())
+                return std::make_unique<ReturnStatement>(std::make_unique<ValueExpression>(NothingTag{}));
             return std::make_unique<ReturnStatement>(expression());
         }
         case token_type::LIST:
@@ -180,8 +183,12 @@ std::unique_ptr<Statement> Parser::assigment_statement()
             expr = std::make_unique<ListExpression>();
         else if (type.rfind("словарь", 0) == 0)
             expr = std::make_unique<DictExpression>();
+        else if (type == "число")
+            expr = std::make_unique<ValueExpression>(0.0);
+        else if (type == "текст")
+            expr = std::make_unique<ValueExpression>(std::string());
         else
-            expr = std::make_unique<ValueExpression>(nullptr);
+            expr = std::make_unique<ValueExpression>(BoolTag{false});
 
         return std::make_unique<AssignmentStatement>(type, name, std::move(expr));
     }
@@ -316,11 +323,17 @@ std::unique_ptr<Statement> Parser::define_function()
 
 std::unique_ptr<Statement> Parser::index_assignment()
 {
+    int start = pos;
     std::string name = consume(token_type::WORDS).get_text();
     consume(token_type::LBRACKET);
     auto index = expression();
     consume(token_type::RBRACKET);
-    consume(token_type::EQ);
+
+    if (!match(token_type::EQ))
+    {
+        pos = start;                                   // это вызов метода, а не присваивание
+        return std::make_unique<FunctionStatement>(postfix());
+    }
     return std::make_unique<IndexAssignStatement>(name, std::move(index), expression());
 }
 
@@ -468,50 +481,33 @@ std::unique_ptr<Expression> Parser::additive()
 
 std::unique_ptr<Expression> Parser::multiply()
 {
-    std::unique_ptr<Expression> expr = pow();
+    std::unique_ptr<Expression> expr = unary();
 
     while (true)
     {
         if (match(token_type::MULT))
         {
-            expr = std::make_unique<BinExpression>('*', std::move(expr), pow());
+            expr = std::make_unique<BinExpression>('*', std::move(expr), unary());
             continue;
         }
         if (match(token_type::INTDIV))
         {
-            expr = std::make_unique<BinExpression>('d', std::move(expr), pow());
+            expr = std::make_unique<BinExpression>('d', std::move(expr), unary());
             continue;
         }
         if (match(token_type::DIV))
         {
-            expr = std::make_unique<BinExpression>('/', std::move(expr), pow());
+            expr = std::make_unique<BinExpression>('/', std::move(expr), unary());
             continue;
         }
         if (match(token_type::MOD))
         {
-            expr = std::make_unique<BinExpression>('%', std::move(expr), pow());
+            expr = std::make_unique<BinExpression>('%', std::move(expr), unary());
             continue;
         }
         break;
     }
 
-
-    return expr;
-}
-
-std::unique_ptr<Expression> Parser::pow()
-{
-    std::unique_ptr<Expression> expr = unary();
-
-    while (true)
-    {
-        if (match(token_type::POW))
-        {
-            expr = std::make_unique<BinExpression>('p', std::move(expr), unary());
-            continue;
-        }
-        break;
-    }
 
     return expr;
 }
@@ -519,11 +515,18 @@ std::unique_ptr<Expression> Parser::pow()
 std::unique_ptr<Expression> Parser::unary()
 {
     if (match(token_type::MINUS))
-        return std::make_unique<UnaryExpression>('-', std::move(unary()));
+        return std::make_unique<UnaryExpression>('-', unary());
     if (match(token_type::PLUS))
-        return std::make_unique<UnaryExpression>('+', std::move(unary()));
+        return std::make_unique<UnaryExpression>('+', unary());
+    return pow();
+}
 
-    return factorials();
+std::unique_ptr<Expression> Parser::pow()
+{
+    std::unique_ptr<Expression> base = factorials();
+    if (match(token_type::POW))
+        return std::make_unique<BinExpression>('p', std::move(base), unary());
+    return base;
 }
 
 std::unique_ptr<Expression> Parser::factorials()

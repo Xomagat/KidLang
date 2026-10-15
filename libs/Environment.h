@@ -66,6 +66,13 @@ public:
             return parent->get_type(name);
         return "";
     }
+
+    Environment& root()
+    {
+        Environment* e = this;
+        while (e->parent) e = e->parent;
+        return *e;
+    }
 };
 
 #endif // KID_ENVIRONMENT_H

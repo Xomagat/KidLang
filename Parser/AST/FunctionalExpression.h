@@ -40,7 +40,7 @@ public:
                 throw std::runtime_error("Рецепту «" + name + "» нужно аргументов: "
                     + std::to_string(f->get_names_size()) + ", а ты дал: " + std::to_string(values.size()) + "!");
 
-            Environment local(&env);
+            Environment local(&env.root());
 
             for (int i = 0; i < f->get_names_size(); i++)
             {

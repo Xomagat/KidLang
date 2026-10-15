@@ -67,15 +67,6 @@ void error_print(const std::string& name, const std::string& message,
        << '\n' << std::endl;
 }
 
-static std::string get_line(const std::string& code, int n)
-{
-    std::istringstream in(code);
-    std::string s;
-    for (int i = 1; std::getline(in, s); i++)
-        if (i == n) return s;
-    return "";
-}
-
 int main(int argc, char* argv[])
 {
 #if _WIN32
@@ -83,43 +74,59 @@ int main(int argc, char* argv[])
     SetConsoleOutputCP(CP_UTF8);
 #endif
 
-    if (argc > 1)
+    if (argc < 2)
     {
-        if (std::strcmp(argv[1], "-v") == 0)
-        {
-            std::cout << "KidLang version: " << VERSION << std::endl;
-            return 0;
-        }
-
-        std::ifstream file(argv[1]);
-        std::stringstream code;
-
-        if (std::filesystem::directory_entry(argv[1]).path().extension() != ".kl")
-            std::cerr << "Ошибка! Я могу читать только мой файл .kl" << std::endl;
-
-        if (!file.is_open())
-            std::cerr << "Я не нашел файл." << std::endl;
-
-        code << file.rdbuf();
-
-        try
-        {
-            auto tokens = Lexer(code.str()).tokenize();
-            std::vector<std::unique_ptr<Statement>> program = Parser(tokens).parse();
-
-            Environment env;
-            for (const auto& st : program)
-                st->execute(env);
-        }
-        catch (const ControlFlowSignal& e)
-        {
-            error_print("Ошибка в коде", e.what(), 1, get_line(code.str(), code.str().length()));
-            return 1;
-        }
-        catch (const std::exception& e)
-        {
-            error_print("Ошибка", e.what());
-            return 1;
-        }
+        std::cerr << "Использование: kid <файл.kl>  или  kid -v" << std::endl;
+        return 1;
     }
+
+    if (std::strcmp(argv[1], "-v") == 0)
+    {
+        std::cout << "KidLang version: " << VERSION << std::endl;
+        return 0;
+    }
+
+    if (std::filesystem::path(argv[1]).extension() != ".kl")
+    {
+        std::cerr << "Ошибка! Я могу читать только мой файл .kl" << std::endl;
+        return 1;
+    }
+
+    std::ifstream file(argv[1], std::ios::binary);
+    if (!file.is_open())
+    {
+        std::cerr << "Я не нашел файл." << std::endl;
+        return 1;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string source = buffer.str();
+    if (source.rfind("\xEF\xBB\xBF", 0) == 0) source.erase(0, 3); // BOM
+
+    try
+    {
+        auto tokens = Lexer(source).tokenize();
+        std::vector<std::unique_ptr<Statement>> program = Parser(tokens).parse();
+
+        Environment env;
+        for (const auto& st : program)
+            st->execute(env);
+    }
+    catch (const ControlFlowSignal& e)
+    {
+        error_print("Ошибка в коде", e.what());
+        return 1;
+    }
+    catch (ReturnException&)
+    {
+        error_print("Ошибка в коде", "«верни» можно писать только внутри рецепта!");
+        return 1;
+    }
+    catch (const std::exception& e)
+    {
+        error_print("Ошибка", e.what());
+        return 1;
+    }
+    return 0;
 }

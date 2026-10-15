@@ -12,7 +12,7 @@ class Statement
 private:
 
 public:
-    ~Statement() = default;
+    virtual ~Statement() = default;
 
     virtual void execute(Environment& env) const = 0;
 };

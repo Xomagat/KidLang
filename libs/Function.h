@@ -12,6 +12,7 @@
 
 #include "../Parser/AST/Statement.h"
 #include "../Parser/AST/ReturnStatement.h"
+#include "../Parser/AST/BreakStatement.h"
 
 inline std::string value_type_name(Value* v)
 {
@@ -86,6 +87,10 @@ public:
                 throw std::runtime_error("Рецепт обещал вернуть «" + type + "», а ты вернул «"
                     + type_name(result.get()) + "»!");
             return result;
+        }
+        catch (const ControlFlowSignal& e)
+        {
+            throw std::runtime_error(e.what());
         }
 
         if (type != "ничего")

@@ -11,6 +11,7 @@ Token::Token()
 {
     this->type = token_type::eof;
     this->text = "";
+    this->line = 0;
 }
 
 Token::Token(token_type type, std::string text, int line)

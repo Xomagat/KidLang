@@ -38,6 +38,11 @@ public:
 
         auto v2 = expr2->eval(env);
 
+        bool n1 = dynamic_cast<NothingValue*>(v1.get()) != nullptr;
+        bool n2 = dynamic_cast<NothingValue*>(v2.get()) != nullptr;
+        if ((n1 || n2) && (op == "==" || op == "!="))
+            return std::make_unique<BoolValue>((op == "==") == (n1 && n2));
+
         if (dynamic_cast<StringValue*>(v1.get()))
         {
             if (op == "==") return std::make_unique<BoolValue>(v1->as_string() == v2->as_string());

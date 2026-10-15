@@ -118,6 +118,7 @@ void Lexer::tokenize_number()
     {
         if (current == U'.')
         {
+            if (!is_digit(peek(1))) break;
             if (buffer.find(U'.') != std::u32string::npos)
                 throw std::runtime_error("В числе две точки. Так писать нельзя, я не пойму, какое это число!");
         }
@@ -190,7 +191,7 @@ void Lexer::tokenize_string()
     std::u32string buffer;
     char32_t current = peek(0);
 
-    while (current != '"' && current != '\0')
+    while (current != '"' || current != '\'' && current != '\0')
     {
         if (current == '\\')
         {
@@ -198,10 +199,11 @@ void Lexer::tokenize_string()
 
             switch (current)
             {
-            case '"': current = next(); buffer.push_back('"'); continue;
-            case 'n': current = next(); buffer.push_back('\n'); continue;
-            case 'r': current = next(); buffer.push_back('\r'); continue;
-            case 't': current = next(); buffer.push_back('\t'); continue;
+            case '"': current = next();  buffer.push_back('"');  continue;
+            case '\'': current = next(); buffer.push_back('\''); continue;
+            case 'n': current = next();  buffer.push_back('\n'); continue;
+            case 'r': current = next();  buffer.push_back('\r'); continue;
+            case 't': current = next();  buffer.push_back('\t'); continue;
             }
 
             buffer.push_back('\\');

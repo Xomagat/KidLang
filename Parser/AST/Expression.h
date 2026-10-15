@@ -16,7 +16,7 @@ class Expression
 private:
 
 public:
-    ~Expression() = default;
+    virtual ~Expression() = default;
 
     virtual std::unique_ptr<Value> eval(Environment& env) const = 0;
 };
