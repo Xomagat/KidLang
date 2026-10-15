@@ -249,12 +249,12 @@ std::unique_ptr<Statement> Parser::if_else()
 
 std::unique_ptr<Statement> Parser::repeat_statement()
 {
-    double counter = std::stod(consume(token_type::NUMBER).get_text());
+    std::unique_ptr<Expression> counter = expression();
 
     consume(token_type::ONCE);
     std::unique_ptr<Statement> body = block();
 
-    return std::make_unique<RepeatStatement>(counter, std::move(body));
+    return std::make_unique<RepeatStatement>(std::move(counter), std::move(body));
 }
 
 std::unique_ptr<Statement> Parser::while_statement()

@@ -18,15 +18,16 @@
 class RepeatStatement : public Statement
 {
 private:
-    double how_much;
+    std::unique_ptr<Expression> how_much;
     std::unique_ptr<Statement> body;
 
 public:
-    explicit RepeatStatement(double how_much, std::unique_ptr<Statement> body) : how_much(how_much), body(std::move(body)) {}
+    explicit RepeatStatement(std::unique_ptr<Expression> how_much, std::unique_ptr<Statement> body) : how_much(std::move(how_much)), body(std::move(body)) {}
 
     void execute(Environment &env) const override
     {
-        for (int i = 0; i < how_much; i++)
+        double c = how_much->eval(env)->as_number();
+        for (int i = 0; i < c; i++)
         {
             try
             {
