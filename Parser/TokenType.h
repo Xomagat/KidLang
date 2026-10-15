@@ -45,6 +45,7 @@ enum token_type
     IN,
     LIST,
     OF,
+    DICT,
 
     // op
     PLUS,
@@ -66,8 +67,11 @@ enum token_type
     RPARENT,
     LBRACKET,
     RBRACKET,
+    LBRACE,
+    RBRACE,
     COMMA,
     DOT,
+    COLON,
 
     PLUSEQ,
     MINUSEQ,
@@ -91,6 +95,7 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {RETURNED, "вернет/вернёт"}, {NOTHING, "ничего"}, {AND, "и"}, {OR, "или"},
     {NOT, "не"}, {CONVERT, "преврати"}, {IN, "в"}, {LIST, "список"}, {OF, "из"},
     {GET, "получи"}, {FOR, "для"}, {FROM, "от"}, {TO, "до"},
+    {DICT, "словарь"}, {LBRACE, "{"}, {RBRACE, "}"}, {COLON, ":"},
     {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
     {ADDTO, "добавляя"}, {MOD, "%"}, {MODEQ, "%="},
     {LOGIC, "условие"}, {TRUE, "верно"}, {FALSE, "неверно"}, {COMMA, ","}, {DOT, "."},

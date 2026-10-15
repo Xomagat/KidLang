@@ -51,6 +51,12 @@ inline bool match_type(const std::string& type, Value* v)
         auto l = dynamic_cast<ListValue*>(v);
         return l && (l->elem_type().empty() || l->elem_type() == list_elem_type(type));
     }
+    if (type.rfind("словарь", 0) == 0)
+    {
+        auto d = dynamic_cast<DictValue*>(v);
+        return d && (d->key_type().empty() ||
+            (d->key_type() == dict_key_type(type) && d->value_type() == dict_value_type(type)));
+    }
     if (type == "текст")   return dynamic_cast<StringValue*>(v) != nullptr;
     if (type == "условие") return dynamic_cast<BoolValue*>(v) != nullptr;
     if (type == "число")   return dynamic_cast<NumberValue*>(v) != nullptr;
@@ -90,6 +96,8 @@ public:
                 throw wrong_type_error(name, old->type, result.get());
             if (auto* l = dynamic_cast<ListValue*>(result.get()))
                 l->set_elem_type(list_elem_type(old->type));
+            if (auto* d = dynamic_cast<DictValue*>(result.get()))
+                d->set_types(dict_key_type(old->type), dict_value_type(old->type));
             env.assign(name, std::move(result));
             return;
         }
@@ -104,6 +112,8 @@ public:
             stored = std::move(result);
         if (auto* l = dynamic_cast<ListValue*>(stored.get()))
             l->set_elem_type(list_elem_type(type));
+        if (auto* d = dynamic_cast<DictValue*>(stored.get()))
+            d->set_types(dict_key_type(type), dict_value_type(type));
         env.define(type, name, std::move(stored));
     }
 };

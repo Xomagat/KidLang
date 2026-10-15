@@ -24,6 +24,7 @@
 #include "NothingValue.h"
 
 static ListValue& L(Value& v) { return static_cast<ListValue&>(v); }
+static DictValue& D(Value& v) { return static_cast<DictValue&>(v); }
 static std::unique_ptr<Value> nothing() { return std::make_unique<NothingValue>(); }
 
 using MethodArgs = std::vector<std::unique_ptr<Value>>;
@@ -35,6 +36,7 @@ inline std::string type_of(Value* v)
     if (dynamic_cast<StringValue*>(v))  return "текст";
     if (dynamic_cast<BoolValue*>(v))    return "условие";
     if (dynamic_cast<ListValue*>(v))    return "список";
+    if (dynamic_cast<DictValue*>(v)) return "словарь";
     return "ничего";
 }
 
@@ -344,22 +346,50 @@ class Methods
             return boolean(false);
         };
 
+        // ---------- словарь ----------
+        t["словарь"]["длина"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 0, "длина");
+            return num((double)D(s).data().size());
+        };
+        t["словарь"]["пусто"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 0, "пусто");
+            return boolean(D(s).data().empty());
+        };
+        t["словарь"]["содержит"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 1, "содержит");
+            D(s).check_key(a[0].get());
+            return boolean(D(s).find(*a[0]) != nullptr);
+        };
+        t["словарь"]["получить"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {   // ключ, запасное
+            need(a, 2, "получить");
+            D(s).check_key(a[0].get());
+            auto* e = D(s).find(*a[0]);
+            return e ? e->second->clone() : std::move(a[1]);
+        };
+        t["словарь"]["удалить"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 1, "удалить");
+            D(s).check_key(a[0].get());
+            if (!D(s).erase(*a[0]))
+                throw std::runtime_error("В словаре нет ключа «" + a[0]->as_string() + "»!");
+            return nothing();
+        };
+        t["словарь"]["ключи"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 0, "ключи");
+            auto r = std::make_unique<ListValue>(D(s).key_type());
+            for (auto& e : D(s).data()) r->push(e.first->clone());
+            return r;
+        };
+        t["словарь"]["значения"] = [](Value& s, MethodArgs& a) -> std::unique_ptr<Value> {
+            need(a, 0, "значения");
+            auto r = std::make_unique<ListValue>(D(s).value_type());
+            for (auto& e : D(s).data()) r->push(e.second->clone());
+            return r;
+        };
+
         return t;
     }
 
-    static Constants init_constants()
-    {
-        return {
-            {"пи",             3.14159265358979323846},
-            {"е",              2.71828182845904523536},
-            {"бесконечность",  std::numeric_limits<double>::infinity()},
-            {"максимум_числа", std::numeric_limits<double>::max()},
-            {"минимум_числа",  std::numeric_limits<double>::lowest()},
-        };
-    }
-
 public:
-    // Метод конкретного типа; если нет — ищем среди универсальных ("любой")
     static const Method& get(const std::string& type, const std::string& name)
     {
         static const Table table = init();
@@ -374,22 +404,6 @@ public:
             }
         }
         throw std::runtime_error("У типа «" + type + "» нет команды «" + name + "». Проверь, как ты её написал!");
-    }
-
-    // ---------- встроенные переменные (константы) ----------
-    static bool has_constant(const std::string& name)
-    {
-        static const Constants c = init_constants();
-        return c.count(name) > 0;
-    }
-
-    static std::unique_ptr<Value> constant(const std::string& name)
-    {
-        static const Constants c = init_constants();
-        auto it = c.find(name);
-        if (it == c.end())
-            throw std::runtime_error("Нет встроенной переменной «" + name + "»!");
-        return std::make_unique<NumberValue>(it->second);
     }
 };
 

@@ -11,7 +11,7 @@
 // funcs
 Lexer::Lexer(const std::string& source)
 {
-    OPERATION_CHARS = U"+-*%/=!()[]<>,.";
+    OPERATION_CHARS = U"+-*%/=!()[]{}<>,.:";
     SINGLE_OPERATORS = {
         {U"+",  token_type::PLUS},
         {U"-",  token_type::MINUS},
@@ -31,8 +31,10 @@ Lexer::Lexer(const std::string& source)
         {U"!",  token_type::EM},
         {U"(",  token_type::LPARENT},
         {U")",  token_type::RPARENT},
-        {U"[", token_type::LBRACKET},
-        {U"]", token_type::RBRACKET},
+        {U"[",  token_type::LBRACKET},
+        {U"]",  token_type::RBRACKET},
+        {U"{",  token_type::LBRACE},
+        {U"}",  token_type::RBRACE},
         {U">",  token_type::GT},
         {U"<",  token_type::LT},
         {U"==", token_type::EQEQ},
@@ -41,6 +43,7 @@ Lexer::Lexer(const std::string& source)
         {U"<=", token_type::LTEQ},
         {U",",  token_type::COMMA},
         {U".",  token_type::DOT},
+        {U":",  token_type::COLON},
     };
 
     code = decode_utf8(source);
@@ -73,9 +76,8 @@ std::vector<Token> Lexer::tokenize()
 
         if (current == U'\n')
         {
-            next();
-            line++;
-            handle_indentation();
+            next(); line++;
+            if (depth == 0) handle_indentation();
             continue;
         }
 
@@ -231,6 +233,11 @@ void Lexer::tokenize_operation()
         auto it = SINGLE_OPERATORS.find(op);
         if (it != SINGLE_OPERATORS.end())
         {
+            switch (it->second) {
+                case token_type::LPARENT: case token_type::LBRACKET: case token_type::LBRACE: depth++; break;
+                case token_type::RPARENT: case token_type::RBRACKET: case token_type::RBRACE: if (depth > 0) depth--; break;
+                default: break;
+            }
             add_token(it->second);
             for (int i = 0; i < len; i++) next();
             return;
@@ -287,6 +294,7 @@ void Lexer::tokenize_word()
         {U"в",        token_type::IN},
         {U"список", token_type::LIST},
         {U"из",     token_type::OF},
+        {U"словарь", token_type::DICT},
     };
 
     auto it = keywords.find(buffer);

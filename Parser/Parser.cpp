@@ -91,6 +91,7 @@ std::unique_ptr<Statement> Parser::statement()
             return std::make_unique<ReturnStatement>(expression());
         }
         case token_type::LIST:
+        case token_type::DICT:
             return assigment_statement();
 
         case token_type::NUMB:
@@ -131,12 +132,32 @@ bool type_check(token_type type)
 
 std::string Parser::parse_type()
 {
+    if (match(token_type::DICT))
+    {
+        consume(token_type::LPARENT, "после «словарь» нужны скобки, например: словарь(текст, число)");
+        std::string key = parse_type();
+        if (key != "число" && key != "текст")
+            throw std::runtime_error(at() + "ключом словаря может быть только число или текст!");
+        consume(token_type::COMMA, "между типом ключа и типом значения нужна запятая, например: словарь(текст, число)");
+        std::string val = parse_type();
+        consume(token_type::RPARENT, "ты забыл закрыть скобку «)» в типе словаря!");
+        return "словарь " + key + " " + val;
+    }
+
     if (match(token_type::LIST))
+    {
+        if (match(token_type::LPARENT))
+        {
+            std::string inner = parse_type();
+            consume(token_type::RPARENT, "ты забыл закрыть скобку «)» в типе списка!");
+            return "список " + inner;
+        }
         return "список " + parse_type();
+    }
 
     Token t = get(0);
     if (!type_check(t.get_type()))
-        throw std::runtime_error(at() + "здесь нужен тип: число, текст, условие или список!");
+        throw std::runtime_error(at() + "здесь нужен тип: число, текст, условие, список или словарь!");
     pos++;
     return t.get_text();
 }
@@ -146,7 +167,8 @@ std::unique_ptr<Statement> Parser::assigment_statement()
     // type name = 33 or type name
     Token current = get(0);
 
-    if (type_check(current.get_type()) || current.get_type() == token_type::LIST)
+    if (type_check(current.get_type()) || current.get_type() == token_type::LIST
+    || current.get_type() == token_type::DICT)
     {
         std::string type = parse_type();
         std::string name = consume(token_type::WORDS).get_text();
@@ -156,6 +178,8 @@ std::unique_ptr<Statement> Parser::assigment_statement()
             expr = expression();
         else if (type.rfind("список", 0) == 0)
             expr = std::make_unique<ListExpression>();
+        else if (type.rfind("словарь", 0) == 0)
+            expr = std::make_unique<DictExpression>();
         else
             expr = std::make_unique<ValueExpression>(nullptr);
 
@@ -562,6 +586,20 @@ std::unique_ptr<Expression> Parser::primary()
             match(token_type::COMMA);
         }
         return list;
+    }
+    if (match(token_type::LBRACE))
+    {
+        auto dict = std::make_unique<DictExpression>();
+        while (!match(token_type::RBRACE))
+        {
+            if (get(0).get_type() == token_type::eof)
+                throw std::runtime_error(at() + "ты забыл закрыть словарь знаком «}»!");
+            auto key = expression();
+            consume(token_type::COLON, "после ключа нужно двоеточие, например: {\"маша\": 7}");
+            dict->add(std::move(key), expression());
+            match(token_type::COMMA);
+        }
+        return dict;
     }
     if (match(token_type::TRUE))
         return std::make_unique<ValueExpression>(BoolTag{true});

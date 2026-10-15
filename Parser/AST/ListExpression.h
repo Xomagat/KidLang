@@ -26,6 +26,26 @@ public:
     }
 };
 
+class DictExpression : public Expression
+{
+    std::vector<std::pair<std::unique_ptr<Expression>, std::unique_ptr<Expression>>> items;
+public:
+    void add(std::unique_ptr<Expression> k, std::unique_ptr<Expression> v)
+    {
+        items.emplace_back(std::move(k), std::move(v));
+    }
+    std::unique_ptr<Value> eval(Environment& env) const override
+    {
+        auto d = std::make_unique<DictValue>();
+        for (const auto& [k, v] : items)
+        {
+            auto key = k->eval(env);
+            d->put(std::move(key), v->eval(env));
+        }
+        return d;
+    }
+};
+
 class IndexExpression : public Expression
 {
     std::unique_ptr<Expression> target, index;
@@ -36,6 +56,15 @@ public:
     std::unique_ptr<Value> eval(Environment& env) const override
     {
         auto t = target->eval(env);
+        if (auto* dict = dynamic_cast<DictValue*>(t.get()))
+        {
+            auto key = index->eval(env);
+            dict->check_key(key.get());
+            auto* e = dict->find(*key);
+            if (!e) throw std::runtime_error("В словаре нет ключа «" + key->as_string()
+                + "»! Проверь заранее: словарь.содержит(ключ)");
+            return e->second->clone();
+        }
         auto* list = dynamic_cast<ListValue*>(t.get());
         if (!list) throw std::runtime_error("Квадратные скобки работают только со списком!");
 
@@ -61,6 +90,13 @@ public:
     void execute(Environment& env) const override
     {
         Val* var = env.revolve(name);
+        if (auto* dict = dynamic_cast<DictValue*>(var->value.get()))
+        {
+            auto key = index->eval(env);
+            dict->put(std::move(key), value->eval(env));
+            return;
+        }
+
         if (!var) throw std::runtime_error("Я не знаю переменную «" + name + "». Сначала создай её!");
         auto* list = dynamic_cast<ListValue*>(var->value.get());
         if (!list) throw std::runtime_error("«" + name + "» не список, а «" + type_name(var->value.get())

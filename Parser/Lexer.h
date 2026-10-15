@@ -30,6 +30,8 @@ private:
 
     int line = 1;
 
+    int depth = 0;
+
     // utf-8 helpers
     static std::u32string decode_utf8(const std::string& input);
     static std::string encode_utf8(const std::u32string& input);
