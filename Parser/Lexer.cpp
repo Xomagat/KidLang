@@ -187,26 +187,28 @@ void Lexer::handle_indentation()
 
 void Lexer::tokenize_string()
 {
-    next(); // skip "
+    const char32_t quote = peek(0);   // " или '
+    next();
     std::u32string buffer;
     char32_t current = peek(0);
 
-    while (current != '"' || current != '\'' && current != '\0')
+    while (current != quote && current != U'\0')
     {
-        if (current == '\\')
+        if (current == U'\\')
         {
             current = next();
 
             switch (current)
             {
-            case '"': current = next();  buffer.push_back('"');  continue;
-            case '\'': current = next(); buffer.push_back('\''); continue;
-            case 'n': current = next();  buffer.push_back('\n'); continue;
-            case 'r': current = next();  buffer.push_back('\r'); continue;
-            case 't': current = next();  buffer.push_back('\t'); continue;
+            case U'"':  current = next(); buffer.push_back(U'"');  continue;
+            case U'\'': current = next(); buffer.push_back(U'\''); continue;
+            case U'\\': current = next(); buffer.push_back(U'\\'); continue;
+            case U'n':  current = next(); buffer.push_back(U'\n'); continue;
+            case U'r':  current = next(); buffer.push_back(U'\r'); continue;
+            case U't':  current = next(); buffer.push_back(U'\t'); continue;
             }
 
-            buffer.push_back('\\');
+            buffer.push_back(U'\\');
             continue;
         }
 
@@ -214,10 +216,10 @@ void Lexer::tokenize_string()
         current = next();
     }
 
-    if (current != U'"')
+    if (current != quote)
         throw std::runtime_error("Ты открыл кавычку, а закрыть забыл!");
 
-    next(); // skip "
+    next(); // " и '
 
     add_token(token_type::TEXT, buffer);
 }
@@ -294,9 +296,10 @@ void Lexer::tokenize_word()
         {U"не",       token_type::NOT},
         {U"преврати", token_type::CONVERT},
         {U"в",        token_type::IN},
-        {U"список", token_type::LIST},
-        {U"из",     token_type::OF},
-        {U"словарь", token_type::DICT},
+        {U"список",   token_type::LIST},
+        {U"из",       token_type::OF},
+        {U"словарь",  token_type::DICT},
+        {U"класс",    token_type::CLASS},
     };
 
     auto it = keywords.find(buffer);

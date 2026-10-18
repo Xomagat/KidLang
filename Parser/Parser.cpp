@@ -93,6 +93,11 @@ std::unique_ptr<Statement> Parser::statement()
                 return std::make_unique<ReturnStatement>(std::make_unique<ValueExpression>(NothingTag{}));
             return std::make_unique<ReturnStatement>(expression());
         }
+        case token_type::CLASS: {
+            consume(token_type::CLASS);
+            return class_definition();
+        }
+
         case token_type::LIST:
         case token_type::DICT:
             return assigment_statement();
@@ -106,10 +111,13 @@ std::unique_ptr<Statement> Parser::statement()
             throw std::runtime_error(at() + "лишний отступ. Отступ нужен только после если, пока, повтори, для и рецепт!");
 
         case token_type::WORDS:
+            if (known_classes.count(get(0).get_text()) && get(1).get_type() == token_type::WORDS)
+                return assigment_statement();
             if (get(1).get_type() == token_type::LBRACKET)
                 return index_assignment();
-
-            if (get(1).get_type() == token_type::LPARENT || get(1).get_type() == token_type::DOT)
+            if (get(1).get_type() == token_type::DOT)
+                return member_statement();
+            if (get(1).get_type() == token_type::LPARENT)
                 return std::make_unique<FunctionStatement>(postfix());
             return assigment_statement();
 
@@ -159,6 +167,12 @@ std::string Parser::parse_type()
     }
 
     Token t = get(0);
+    if (t.get_type() == token_type::WORDS && known_classes.count(t.get_text()))
+    {
+        pos++;
+        return t.get_text();
+    }
+
     if (!type_check(t.get_type()))
         throw std::runtime_error(at() + "здесь нужен тип: число, текст, условие, список или словарь!");
     pos++;
@@ -170,8 +184,7 @@ std::unique_ptr<Statement> Parser::assigment_statement()
     // type name = 33 or type name
     Token current = get(0);
 
-    if (type_check(current.get_type()) || current.get_type() == token_type::LIST
-    || current.get_type() == token_type::DICT)
+    if (is_type_start(current))
     {
         std::string type = parse_type();
         std::string name = consume(token_type::WORDS).get_text();
@@ -297,28 +310,9 @@ std::unique_ptr<Statement> Parser::for_statement()
 
 std::unique_ptr<Statement> Parser::define_function()
 {
-    std::string type = "ничего";
-    std::string name = consume(token_type::WORDS, "после «рецепт» нужно имя рецепта").get_text();
-    consume(token_type::LPARENT, "после имени рецепта нужны скобки, например: рецепт привет()");
-
-    std::vector<std::string> arg_type;
-    std::vector<std::string> arg_name;
-
-    Environment env;
-
-    while (!match(token_type::RPARENT))
-    {
-        arg_type.push_back(parse_type());
-        arg_name.push_back(consume(token_type::WORDS, "после типа аргумента нужно его имя").get_text());
-        match(token_type::COMMA);
-    }
-
-    if (match(token_type::RETURNED))
-        type = match(token_type::NOTHING) ? "ничего" : parse_type();
-
-    std::unique_ptr<Statement> body = block();
-
-    return std::make_unique<FunctionDefineStatement>(type, name, arg_type, arg_name, std::move(body));
+    FuncParts p = function_parts();
+    return std::make_unique<FunctionDefineStatement>(
+        p.type, p.name, p.arg_types, p.arg_names, std::move(p.body));
 }
 
 std::unique_ptr<Statement> Parser::index_assignment()
@@ -337,6 +331,66 @@ std::unique_ptr<Statement> Parser::index_assignment()
     return std::make_unique<IndexAssignStatement>(name, std::move(index), expression());
 }
 
+std::unique_ptr<Statement> Parser::class_definition()
+{
+    ClassInfo info;
+    info.name = consume(token_type::WORDS, "после «класс» нужно имя класса").get_text();
+    known_classes.insert(info.name);   // до тела — чтобы класс мог ссылаться на себя
+
+    consume(token_type::INDENT, "после имени класса нужен отступ с полями и рецептами");
+
+    while (!match(token_type::DEDENT) && !match(token_type::eof))
+    {
+        if (match(token_type::DEFINE))
+        {
+            FuncParts p = function_parts();
+            info.methods[p.name] = std::make_shared<UserDefineFunction>(
+                p.type, p.arg_types, p.arg_names, std::shared_ptr<Statement>(std::move(p.body)));
+        }
+        else if (is_type_start(get(0)))
+        {
+            std::string type = parse_type();
+            std::string name = consume(token_type::WORDS, "после типа поля нужно имя").get_text();
+            std::unique_ptr<Expression> init = match(token_type::EQ) ? expression() : default_expr(type);
+            info.fields.push_back({type, name, std::move(init)});
+        }
+        else
+            throw std::runtime_error(at() + "в классе можно писать только поля («число x») и рецепты!");
+    }
+    return std::make_unique<ClassDefineStatement>(std::move(info));
+}
+
+std::unique_ptr<Statement> Parser::member_statement()
+{
+    int start = pos;
+    auto expr = postfix();
+
+    if (auto* field = dynamic_cast<FieldExpression*>(expr.get()))
+    {
+        if (match(token_type::EQ))
+            return std::make_unique<FieldAssignStatement>(field->take_target(), field->field_name(), expression());
+
+        static const std::unordered_map<token_type, char> ops = {
+            {token_type::PLUSEQ, '+'}, {token_type::MINUSEQ, '-'}, {token_type::MULTEQ, '*'},
+            {token_type::DIVEQ, '/'},  {token_type::MODEQ, '%'},   {token_type::POWEQ, 'p'},
+            {token_type::INTDIVEQ, 'd'}
+        };
+        auto it = ops.find(get(0).get_type());
+        if (it != ops.end())
+        {
+            pos++;
+            auto right = expression();
+            int end = pos;
+            pos = start;
+            auto again = postfix();
+            pos = end;
+            auto bin = std::make_unique<BinExpression>(it->second, std::move(again), std::move(right));
+            return std::make_unique<FieldAssignStatement>(field->take_target(), field->field_name(), std::move(bin));
+        }
+    }
+    return std::make_unique<FunctionStatement>(std::move(expr));
+}
+
 std::unique_ptr<Expression> Parser::function()
 {
     std::string name = consume(token_type::WORDS).get_text();
@@ -351,6 +405,16 @@ std::unique_ptr<Expression> Parser::function()
     }
 
     return function;
+}
+
+std::unique_ptr<Expression> Parser::default_expr(const std::string& type)
+{
+    if (type.rfind("список", 0) == 0)  return std::make_unique<ListExpression>();
+    if (type.rfind("словарь", 0) == 0) return std::make_unique<DictExpression>();
+    if (type == "число")   return std::make_unique<ValueExpression>(0.0);
+    if (type == "текст")   return std::make_unique<ValueExpression>(std::string());
+    if (type == "условие") return std::make_unique<ValueExpression>(BoolTag{false});
+    throw std::runtime_error(at() + "объекту нужно сразу дать значение, например: " + type + " x = " + type + "(...)");
 }
 
 std::unique_ptr<Expression> Parser::expression()
@@ -548,15 +612,18 @@ std::unique_ptr<Expression> Parser::postfix()
         if (match(token_type::DOT))
         {
             std::string name = consume(token_type::WORDS).get_text();
-            consume(token_type::LPARENT);
-
-            auto call = std::make_unique<MethodExpression>(std::move(expr), name);
-            while (!match(token_type::RPARENT))
+            if (match(token_type::LPARENT))
             {
-                call->add_arg(expression());
-                match(token_type::COMMA);
+                auto call = std::make_unique<MethodExpression>(std::move(expr), name);
+                while (!match(token_type::RPARENT))
+                {
+                    call->add_arg(expression());
+                    match(token_type::COMMA);
+                }
+                expr = std::move(call);
             }
-            expr = std::move(call);
+            else
+                expr = std::make_unique<FieldExpression>(std::move(expr), name);
         }
         else if (match(token_type::LBRACKET))
         {
@@ -706,4 +773,31 @@ Token Parser::consume(token_type type, const std::string& hint)
         throw std::runtime_error(at() + hint);
     pos++;
     return t;
+}
+
+bool Parser::is_type_start(Token t)
+{
+    return type_check(t.get_type()) || t.get_type() == token_type::LIST
+        || t.get_type() == token_type::DICT
+        || (t.get_type() == token_type::WORDS && known_classes.count(t.get_text()));
+}
+FuncParts Parser::function_parts()
+{
+    FuncParts p;
+    p.type = "ничего";
+    p.name = consume(token_type::WORDS, "после «рецепт» нужно имя рецепта").get_text();
+    consume(token_type::LPARENT, "после имени рецепта нужны скобки, например: рецепт привет()");
+
+    while (!match(token_type::RPARENT))
+    {
+        p.arg_types.push_back(parse_type());
+        p.arg_names.push_back(consume(token_type::WORDS, "после типа аргумента нужно его имя").get_text());
+        match(token_type::COMMA);
+    }
+
+    if (match(token_type::RETURNED))
+        p.type = match(token_type::NOTHING) ? "ничего" : parse_type();
+
+    p.body = block();
+    return p;
 }

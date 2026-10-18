@@ -10,6 +10,7 @@
 
 #include "Expression.h"
 #include "../../libs/Functions.h"
+#include "../../libs/Classes.h"
 
 class FunctionalExpression : public Expression
 {
@@ -31,6 +32,9 @@ public:
     {
         std::vector<std::unique_ptr<Value>> values;
         for (const auto& arg : args) values.push_back(arg->eval(env));
+
+        if (Classes::exists(name))
+            return instantiate(name, std::move(values), env);
 
         Function* function = Functions::get(name);
 

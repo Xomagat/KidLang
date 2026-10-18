@@ -12,6 +12,7 @@
 
 #include "Expression.h"
 #include "../../libs/Methods.h"
+#include "../../libs/Classes.h"
 
 class MethodExpression : public Expression
 {
@@ -31,6 +32,15 @@ public:
 
         MethodArgs values;
         for (const auto& a : args) values.push_back(a->eval(env));
+
+        if (auto* obj = dynamic_cast<ObjectValue*>(self.get()))
+        {
+            ClassInfo& ci = Classes::get(obj->class_name());
+            auto it = ci.methods.find(name);
+            if (it != ci.methods.end())
+                return call_method(*it->second, name, *obj, std::move(values), env);
+            return Methods::get(obj->class_name(), name)(*self, values);
+        }
 
         const Method& m = Methods::get(type_of(self.get()), name);
         return m(*self, values);

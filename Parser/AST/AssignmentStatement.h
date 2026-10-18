@@ -60,7 +60,8 @@ inline bool match_type(const std::string& type, Value* v)
     if (type == "текст")   return dynamic_cast<StringValue*>(v) != nullptr;
     if (type == "условие") return dynamic_cast<BoolValue*>(v) != nullptr;
     if (type == "число")   return dynamic_cast<NumberValue*>(v) != nullptr;
-    return false;
+    auto o = dynamic_cast<ObjectValue*>(v);
+    return o && o->class_name() == type;
 }
 
 inline std::runtime_error wrong_type_error(const std::string& var, const std::string& type, Value* v)

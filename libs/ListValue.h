@@ -15,6 +15,7 @@
 #include "StringValue.h"
 #include "BoolValue.h"
 #include "NothingValue.h"
+#include "ObjectValue.h"
 
 inline std::string elements_word(long long n)
 {
@@ -168,6 +169,7 @@ inline std::string type_name(const Value* v)
         return l->elem_type().empty() ? "список" : "список " + l->elem_type();
     if (auto d = dynamic_cast<const DictValue*>(v))
         return d->key_type().empty() ? "словарь" : "словарь " + d->key_type() + " " + d->value_type();
+    if (auto o = dynamic_cast<const ObjectValue*>(v)) return o->class_name();
     return "ничего";
 }
 
