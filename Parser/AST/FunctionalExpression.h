@@ -40,19 +40,8 @@ public:
 
         if (auto f = dynamic_cast<UserDefineFunction*>(function))
         {
-            if (values.size() != (size_t)f->get_names_size())
-                throw std::runtime_error("Рецепту «" + name + "» нужно аргументов: "
-                    + std::to_string(f->get_names_size()) + ", а ты дал: " + std::to_string(values.size()) + "!");
-
             Environment local(&env.root());
-
-            for (int i = 0; i < f->get_names_size(); i++)
-            {
-                if (!match_type(f->get_type_index(i), values[i].get()))
-                    throw std::runtime_error("Рецепт «" + name + "» ждёт «" + f->get_type_index(i)
-                        + "» в «" + f->get_name_index(i) + "», а ты дал «" + type_name(values[i].get()) + "»!");
-                local.define(f->get_type_index(i), f->get_name_index(i), std::move(values[i]));
-            }
+            bind_args(*f, name, values, local);
 
             std::unique_ptr<Value> result = f->execute(local, {});
             if (!result) return std::make_unique<NothingValue>();

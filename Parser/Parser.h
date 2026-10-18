@@ -40,6 +40,7 @@ struct FuncParts
 {
     std::string type, name;
     std::vector<std::string> arg_types, arg_names;
+    std::vector<std::shared_ptr<Expression>> arg_defaults;
     std::unique_ptr<Statement> body;
 };
 

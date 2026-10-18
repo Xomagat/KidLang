@@ -312,7 +312,7 @@ std::unique_ptr<Statement> Parser::define_function()
 {
     FuncParts p = function_parts();
     return std::make_unique<FunctionDefineStatement>(
-        p.type, p.name, p.arg_types, p.arg_names, std::move(p.body));
+        p.type, p.name, p.arg_types, p.arg_names, p.arg_defaults, std::move(p.body));
 }
 
 std::unique_ptr<Statement> Parser::index_assignment()
@@ -345,7 +345,7 @@ std::unique_ptr<Statement> Parser::class_definition()
         {
             FuncParts p = function_parts();
             info.methods[p.name] = std::make_shared<UserDefineFunction>(
-                p.type, p.arg_types, p.arg_names, std::shared_ptr<Statement>(std::move(p.body)));
+                p.type, p.arg_types, p.arg_names, p.arg_defaults, std::shared_ptr<Statement>(std::move(p.body)));
         }
         else if (is_type_start(get(0)))
         {
@@ -788,10 +788,23 @@ FuncParts Parser::function_parts()
     p.name = consume(token_type::WORDS, "после «рецепт» нужно имя рецепта").get_text();
     consume(token_type::LPARENT, "после имени рецепта нужны скобки, например: рецепт привет()");
 
+    bool seen_default = false;
     while (!match(token_type::RPARENT))
     {
         p.arg_types.push_back(parse_type());
         p.arg_names.push_back(consume(token_type::WORDS, "после типа аргумента нужно его имя").get_text());
+
+        if (match(token_type::EQ))
+        {
+            p.arg_defaults.push_back(expression());
+            seen_default = true;
+        }
+        else
+        {
+            if (seen_default)
+                throw std::runtime_error(at() + "после аргумента со значением по умолчанию все остальные тоже должны иметь значение!");
+            p.arg_defaults.push_back(nullptr);
+        }
         match(token_type::COMMA);
     }
 

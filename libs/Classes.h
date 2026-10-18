@@ -49,6 +49,32 @@ inline void adopt_type(Value* v, const std::string& type)
     if (auto* d = dynamic_cast<DictValue*>(v)) d->set_types(dict_key_type(type), dict_value_type(type));
 }
 
+inline void bind_args(UserDefineFunction& f, const std::string& name,
+                      std::vector<std::unique_ptr<Value>>& values, Environment& local)
+{
+    int total = f.get_names_size(), required = f.required_count();
+
+    if ((int)values.size() < required || (int)values.size() > total)
+    {
+        std::string need = required == total ? std::to_string(total)
+            : "от " + std::to_string(required) + " до " + std::to_string(total);
+        throw std::runtime_error("Рецепту «" + name + "» нужно аргументов: " + need
+            + ", а ты дал: " + std::to_string(values.size()) + "!");
+    }
+
+    for (int i = 0; i < total; i++)
+    {
+        std::unique_ptr<Value> v = i < (int)values.size()
+            ? std::move(values[i])
+            : f.get_default(i)->eval(local);
+
+        if (!match_type(f.get_type_index(i), v.get()))
+            throw std::runtime_error("Рецепт «" + name + "» ждёт «" + f.get_type_index(i)
+                + "» в «" + f.get_name_index(i) + "», а ты дал «" + type_name(v.get()) + "»!");
+        local.define(f.get_type_index(i), f.get_name_index(i), std::move(v));
+    }
+}
+
 inline std::unique_ptr<Value> call_method(UserDefineFunction& f, const std::string& name,
                                           ObjectValue& self,
                                           std::vector<std::unique_ptr<Value>> values,
@@ -60,14 +86,7 @@ inline std::unique_ptr<Value> call_method(UserDefineFunction& f, const std::stri
 
     Environment local(&env.root());
     local.define(self.class_name(), "это", self.clone());
-
-    for (int i = 0; i < f.get_names_size(); i++)
-    {
-        if (!match_type(f.get_type_index(i), values[i].get()))
-            throw std::runtime_error("Рецепт «" + name + "» ждёт «" + f.get_type_index(i)
-                + "» в «" + f.get_name_index(i) + "», а ты дал «" + type_name(values[i].get()) + "»!");
-        local.define(f.get_type_index(i), f.get_name_index(i), std::move(values[i]));
-    }
+    bind_args(f, name, values, local);
 
     auto result = f.execute(local, {});
     return result ? std::move(result) : std::make_unique<NothingValue>();

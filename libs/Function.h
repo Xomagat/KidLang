@@ -38,10 +38,24 @@ private:
     std::vector<std::string> arg_types;
     std::vector<std::string> arg_names;
     std::shared_ptr<Statement> body;
+    std::vector<std::shared_ptr<Expression>> arg_defaults;
 
 public:
-    explicit UserDefineFunction(std::string  type, const std::vector<std::string>& arg_types, const std::vector<std::string>& arg_names, std::shared_ptr<Statement> body)
-    : type(std::move(type)), arg_types(arg_types), arg_names(arg_names), body(std::move(body)) {}
+    explicit UserDefineFunction(std::string type, const std::vector<std::string>& arg_types,
+                                const std::vector<std::string>& arg_names,
+                                std::vector<std::shared_ptr<Expression>> arg_defaults,
+                                std::shared_ptr<Statement> body)
+        : type(std::move(type)), arg_types(arg_types), arg_names(arg_names),
+          arg_defaults(std::move(arg_defaults)), body(std::move(body)) {}
+
+    int required_count() const
+    {
+        int n = 0;
+        for (const auto& d : arg_defaults) if (!d) n++;
+        return n;
+    }
+
+    Expression* get_default(int index) const { return arg_defaults[index].get(); }
 
     const std::string& get_type()
     {
