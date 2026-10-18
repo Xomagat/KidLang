@@ -44,7 +44,10 @@ add_executable(kid main.cpp
         libs/ObjectValue.h
         libs/Classes.h
         Parser/AST/ClassesStatemant.h
-        Parser/AST/ObjectExpression.h)
+        Parser/AST/ObjectExpression.h
+        libs/NativeLibs.h
+        libs/KlLibs.h
+        Parser/AST/ImportStatement.h)
 
 if (WIN32)
     target_link_options(kid PRIVATE -static-libgcc -static-libstdc++)
