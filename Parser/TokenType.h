@@ -47,6 +47,7 @@ enum token_type
     OF,
     DICT,
     CLASS,
+    IMPORT,
 
     // op
     PLUS,
@@ -97,7 +98,7 @@ inline std::unordered_map<token_type, std::string> token_string = {
     {NOT, "не"}, {CONVERT, "преврати"}, {IN, "в"}, {LIST, "список"}, {OF, "из"},
     {GET, "получи"}, {FOR, "для"}, {FROM, "от"}, {TO, "до"},
     {DICT, "словарь"}, {CLASS, "класс"}, {LBRACE, "{"}, {RBRACE, "}"}, {COLON, ":"},
-    {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"},
+    {ELSE, "иначе"}, {NUMB, "число"}, {STRING, "текст"}, {IMPORT, "используй"},
     {ADDTO, "добавляя"}, {MOD, "%"}, {MODEQ, "%="},
     {LOGIC, "условие"}, {TRUE, "верно"}, {FALSE, "неверно"}, {COMMA, ","}, {DOT, "."},
     {PLUS, "+"}, {MINUS, "-"}, {MULT, "*"}, {DIV, "/"}, {POW, "**"}, {EQ, "="},

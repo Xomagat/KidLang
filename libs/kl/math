@@ -1,0 +1,7 @@
+#include <cmath>
+
+const double пи = 3.14159265358979323846;
+KL_CONST(пи)
+
+double синус(double x) { return std::sin(x); }
+KL_EXPORT(синус)

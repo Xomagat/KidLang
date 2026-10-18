@@ -34,6 +34,7 @@
 #include "AST/ClassesStatemant.h"
 #include "AST/IOStatement.h"
 #include "AST/IfStatement.h"
+#include "AST/ImportStatement.h"
 #include "AST/Statement.h"
 
 struct FuncParts

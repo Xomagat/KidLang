@@ -300,6 +300,7 @@ void Lexer::tokenize_word()
         {U"из",       token_type::OF},
         {U"словарь",  token_type::DICT},
         {U"класс",    token_type::CLASS},
+        {U"используй",token_type::IMPORT},
     };
 
     auto it = keywords.find(buffer);

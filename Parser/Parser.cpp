@@ -97,6 +97,11 @@ std::unique_ptr<Statement> Parser::statement()
             consume(token_type::CLASS);
             return class_definition();
         }
+        case token_type::IMPORT: {
+            consume(token_type::IMPORT);
+            return std::make_unique<ImportStatement>(
+                consume(token_type::WORDS, "после «подключи» нужно имя библиотеки, например: подключи math").get_text());
+        }
 
         case token_type::LIST:
         case token_type::DICT:
