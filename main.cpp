@@ -12,6 +12,8 @@
 #include "libs/Environment.h"
 #include "libs/Console.h"
 
+#include "libs/KlLibs.h"
+
 #if _WIN32
 #include <windows.h>
 #endif
