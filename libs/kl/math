@@ -1,7 +1,93 @@
 #include <cmath>
+#include <numbers>
 
-const double пи = 3.14159265358979323846;
+// -----------------------   константы   -------------------------------------------
+
+const double пи = std::numbers::pi;
 KL_CONST(пи)
 
-double синус(double x) { return std::sin(x); }
+const double золотое_сечение = std::numbers::phi;
+KL_CONST(золотое_сечение)
+
+const double корень_из_2 = std::numbers::sqrt2;
+KL_CONST(корень_из_2)
+
+const double корень_из_3 = std::numbers::sqrt3;
+KL_CONST(корень_из_3)
+
+const double минус_ноль = -0;
+KL_CONST(минус_ноль)
+
+const double число_эйлера = std::numbers::e;
+KL_CONST(число_эйлера)
+
+// -----------------------   функции   ---------------------------------------------
+
+double синус(const double x) { return std::sin(x); }
 KL_EXPORT(синус)
+
+double косинус(const double x) { return std::cos(x); }
+KL_EXPORT(косинус)
+
+double тангенс(const double x) { return std::tan(x); }
+KL_EXPORT(тангенс)
+
+double степень(const double x, const double y) { return std::pow(x, y); }
+KL_EXPORT(степень)
+
+double корень(const double x) { return std::sqrt(x); }
+KL_EXPORT(корень)
+
+double экспонента(const double x) { return std::exp(x); }
+KL_EXPORT(экспонента)
+
+double логарифм(const double x) { return std::log(x); }
+KL_EXPORT(логарифм)
+
+double логарифм10(const double x) { return std::log10(x); }
+KL_EXPORT(логарифм10)
+
+double логарифм2(const double x) { return std::log2(x); }
+KL_EXPORT(логарифм2)
+
+double гиперболический_синус(const double x) { return std::sinh(x); }
+KL_EXPORT(гиперболический_синус)
+
+double гиперболический_косинус(const double x) { return std::cosh(x); }
+KL_EXPORT(гиперболический_косинус)
+
+double гиперболический_тангенс(const double x) { return std::tanh(x); }
+KL_EXPORT(гиперболический_тангенс)
+
+double модуль(const double x) { return std::fabs(x); }
+KL_EXPORT(модуль)
+
+double округление_вверх(const double x) { return std::ceil(x); }
+KL_EXPORT(округление_вверх)
+
+double округление_вниз(const double x) { return std::floor(x); }
+KL_EXPORT(округление_вниз)
+
+double округление(const double x) { return std::round(x); }
+KL_EXPORT(округление)
+
+double гипотенуза(const double x, const double y) { return std::hypot(x, y); }
+KL_EXPORT(гипотенуза)
+
+double остаток(const double x, const double y) { return std::fmod(x, y); }
+KL_EXPORT(остаток)
+
+double минимум(const double x, const double y) { return std::min(x, y); }
+KL_EXPORT(минимум)
+
+double максимум(const double x, const double y) { return std::max(x, y); }
+KL_EXPORT(максимум)
+
+double знак(const double x) { return (x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0); }
+KL_EXPORT(знак)
+
+double радианы_в_градусы(const double x) { return x * 180.0 / M_PI; }
+KL_EXPORT(радианы_в_градусы)
+
+double градусы_в_радианы(const double x) { return x * M_PI / 180.0; }
+KL_EXPORT(градусы_в_радианы)
