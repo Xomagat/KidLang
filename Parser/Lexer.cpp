@@ -203,9 +203,9 @@ void Lexer::tokenize_string()
             case U'"':  current = next(); buffer.push_back(U'"');  continue;
             case U'\'': current = next(); buffer.push_back(U'\''); continue;
             case U'\\': current = next(); buffer.push_back(U'\\'); continue;
-            case U'n':  current = next(); buffer.push_back(U'\n'); continue;
-            case U'r':  current = next(); buffer.push_back(U'\r'); continue;
-            case U't':  current = next(); buffer.push_back(U'\t'); continue;
+            case U'н':  current = next(); buffer.push_back(U'\n'); continue;
+            case U'р':  current = next(); buffer.push_back(U'\r'); continue;
+            case U'т':  current = next(); buffer.push_back(U'\t'); continue;
             }
 
             buffer.push_back(U'\\');
