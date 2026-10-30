@@ -100,6 +100,8 @@ private:
 
     FuncParts function_parts();
 
+    std::string member_name();
+
 public:
     Parser(std::vector<Token> tokens);
 

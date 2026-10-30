@@ -22,11 +22,20 @@ struct FieldDecl
     std::shared_ptr<Expression> init;
 };
 
+using NativeGetter = std::function<std::unique_ptr<Value>(ObjectValue&)>;
+using NativeSetter = std::function<void(ObjectValue&, std::unique_ptr<Value>)>;
+using NativeMethod = std::function<std::unique_ptr<Value>(ObjectValue&, std::vector<std::unique_ptr<Value>>&)>;
+
 struct ClassInfo
 {
     std::string name;
     std::vector<FieldDecl> fields;
     std::unordered_map<std::string, std::shared_ptr<UserDefineFunction>> methods;
+
+    std::unordered_map<std::string, NativeGetter> getters;
+    std::unordered_map<std::string, NativeSetter> setters;
+    std::unordered_map<std::string, NativeMethod> native_methods;
+    std::string make_hint;
 };
 
 class Classes
@@ -97,6 +106,7 @@ inline std::unique_ptr<Value> instantiate(const std::string& cls,
                                           Environment& env)
 {
     ClassInfo& ci = Classes::get(cls);
+    if (!ci.make_hint.empty()) throw std::runtime_error(ci.make_hint);
     auto obj = std::make_unique<ObjectValue>(cls);
 
     Environment defaults(&env.root());

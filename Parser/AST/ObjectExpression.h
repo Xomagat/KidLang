@@ -26,6 +26,9 @@ public:
         auto t = target->eval(env);
         auto* o = dynamic_cast<ObjectValue*>(t.get());
         if (!o) throw std::runtime_error("Точка работает только с объектом, а тут «" + type_name(t.get()) + "»!");
+        ClassInfo& ci = Classes::get(o->class_name());
+        if (auto g = ci.getters.find(name); g != ci.getters.end())
+            return g->second(*o);
         auto it = o->data().find(name);
         if (it == o->data().end())
             throw std::runtime_error("У класса «" + o->class_name() + "» нет поля «" + name + "»!");
@@ -46,6 +49,12 @@ public:
         auto t = target->eval(env);
         auto* o = dynamic_cast<ObjectValue*>(t.get());
         if (!o) throw std::runtime_error("Точка работает только с объектом, а тут «" + type_name(t.get()) + "»!");
+        ClassInfo& ci = Classes::get(o->class_name());
+        if (auto s = ci.setters.find(name); s != ci.setters.end())
+        {
+            s->second(*o, value->eval(env));
+            return;
+        }
         auto it = o->data().find(name);
         if (it == o->data().end())
             throw std::runtime_error("У класса «" + o->class_name() + "» нет поля «" + name

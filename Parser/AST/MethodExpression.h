@@ -39,6 +39,8 @@ public:
             auto it = ci.methods.find(name);
             if (it != ci.methods.end())
                 return call_method(*it->second, name, *obj, std::move(values), env);
+            if (auto nm = ci.native_methods.find(name); nm != ci.native_methods.end())
+                return nm->second(*obj, values);
             return Methods::get(obj->class_name(), name)(*self, values);
         }
 

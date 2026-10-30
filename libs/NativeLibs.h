@@ -18,6 +18,7 @@
 #include "../Parser/AST/AssignmentStatement.h"
 #include "Functions.h"
 #include "ListValue.h"
+#include "Classes.h"
 
 using NativeArgs = std::vector<std::unique_ptr<Value>>;
 using NativeFn   = std::function<std::unique_ptr<Value>(NativeArgs&)>;
@@ -45,7 +46,7 @@ class NativeLibs
 {
     struct Entry { std::string name; size_t arity; NativeFn fn; };
     struct Const { std::string name, type; std::shared_ptr<Value> value; };
-    struct Lib   { std::vector<Entry> funcs; std::vector<Const> consts; };
+    struct Lib   { std::vector<Entry> funcs; std::vector<Const> consts; std::vector<ClassInfo> classes; };
 
     static std::map<std::string, Lib>& table()
     {
@@ -83,6 +84,24 @@ public:
 
         for (auto& c : it->second.consts)
             env.root().define(c.type, c.name, c.value->clone());
+
+        for (auto& c : it->second.classes)
+            Classes::define(c);
+    }
+
+    static bool add_class(const std::string& lib, ClassInfo info)
+    {
+        table()[lib].classes.push_back(std::move(info));
+        return true;
+    }
+
+    static std::vector<std::string> class_names(const std::string& lib)
+    {
+        std::vector<std::string> r;
+        auto it = table().find(lib);
+        if (it != table().end())
+            for (auto& c : it->second.classes) r.push_back(c.name);
+        return r;
     }
 };
 

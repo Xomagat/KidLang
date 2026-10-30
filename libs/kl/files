@@ -1,0 +1,285 @@
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+namespace kl_files
+{
+    namespace fs = std::filesystem;
+
+    // ---------- вспомогательные ----------
+    inline fs::path to_path(const std::string& p)
+    {
+        return fs::path(std::u8string(p.begin(), p.end()));   // UTF-8 и на Windows тоже
+    }
+
+    inline std::string from_path(const fs::path& p)
+    {
+        auto u = p.u8string();
+        return std::string(u.begin(), u.end());
+    }
+
+    inline std::string read_all(const std::string& path)
+    {
+        std::ifstream in(to_path(path), std::ios::binary);
+        if (!in)
+            throw std::runtime_error("Я не могу прочитать файл «" + path + "». Он есть? Правильно ли написан путь?");
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        std::string s = ss.str();
+
+        if (s.rfind("\xEF\xBB\xBF", 0) == 0) s.erase(0, 3);   // BOM
+
+        std::string out;                                       // \r\n -> \n
+        out.reserve(s.size());
+        for (size_t i = 0; i < s.size(); i++)
+            if (!(s[i] == '\r' && i + 1 < s.size() && s[i + 1] == '\n'))
+                out += s[i];
+        return out;
+    }
+
+    inline void write_all(const std::string& path, const std::string& text, bool append = false)
+    {
+        std::ofstream out(to_path(path), std::ios::binary | (append ? std::ios::app : std::ios::trunc));
+        if (!out)
+            throw std::runtime_error("Я не могу записать в файл «" + path + "». Может, такой папки нет?");
+        out << text;
+    }
+
+    inline std::vector<std::string> split_lines(const std::string& text)
+    {
+        std::vector<std::string> r;
+        std::string cur;
+        for (char c : text)
+        {
+            if (c == '\n') { r.push_back(cur); cur.clear(); }
+            else cur += c;
+        }
+        if (!cur.empty()) r.push_back(cur);
+        return r;
+    }
+
+    inline std::unique_ptr<Value> to_list(const std::vector<std::string>& v)
+    {
+        auto l = std::make_unique<ListValue>("текст");
+        for (const auto& s : v) l->push(std::make_unique<StringValue>(s));
+        return l;
+    }
+
+    // ---------- функции ----------
+    std::string прочитать(const std::string& путь) { return read_all(путь); }
+    KL_EXPORT(прочитать)
+
+    void записать(const std::string& путь, const std::string& содержимое) { write_all(путь, содержимое); }
+    KL_EXPORT(записать)
+
+    void дописать(const std::string& путь, const std::string& содержимое) { write_all(путь, содержимое, true); }
+    KL_EXPORT(дописать)
+
+    bool существует(const std::string& путь)
+    {
+        std::error_code ec;
+        return fs::is_regular_file(to_path(путь), ec);
+    }
+    KL_EXPORT(существует)
+
+    bool папка_существует(const std::string& путь)
+    {
+        std::error_code ec;
+        return fs::is_directory(to_path(путь), ec);
+    }
+    KL_EXPORT(папка_существует)
+
+    double размер_файла(const std::string& путь)
+    {
+        std::error_code ec;
+        auto n = fs::file_size(to_path(путь), ec);
+        if (ec) throw std::runtime_error("Я не нашёл файл «" + путь + "», не могу узнать его размер!");
+        return (double)n;
+    }
+    KL_EXPORT(размер_файла)
+
+    void удалить_файл(const std::string& путь)
+    {
+        std::error_code ec;
+        if (!fs::is_regular_file(to_path(путь), ec))
+            throw std::runtime_error("Я не нашёл файл «" + путь + "», удалять нечего!");
+        fs::remove(to_path(путь), ec);
+        if (ec) throw std::runtime_error("Я не смог удалить файл «" + путь + "»!");
+    }
+    KL_EXPORT(удалить_файл)
+
+    void переименовать(const std::string& старое, const std::string& новое)
+    {
+        std::error_code ec;
+        if (!fs::exists(to_path(старое), ec))
+            throw std::runtime_error("Я не нашёл «" + старое + "», переименовывать нечего!");
+        if (fs::exists(to_path(новое), ec))
+            throw std::runtime_error("«" + новое + "» уже есть! Я не буду его затирать.");
+        fs::rename(to_path(старое), to_path(новое), ec);
+        if (ec) throw std::runtime_error("Я не смог переименовать «" + старое + "»!");
+    }
+    KL_EXPORT(переименовать)
+
+    void копировать_файл(const std::string& откуда, const std::string& куда)
+    {
+        std::error_code ec;
+        if (!fs::is_regular_file(to_path(откуда), ec))
+            throw std::runtime_error("Я не нашёл файл «" + откуда + "», копировать нечего!");
+        if (fs::exists(to_path(куда), ec))
+            throw std::runtime_error("«" + куда + "» уже есть! Я не буду его затирать.");
+        fs::copy_file(to_path(откуда), to_path(куда), ec);
+        if (ec) throw std::runtime_error("Я не смог скопировать файл «" + откуда + "»!");
+    }
+    KL_EXPORT(копировать_файл)
+
+    void создать_папку(const std::string& путь)
+    {
+        std::error_code ec;
+        fs::create_directories(to_path(путь), ec);
+        if (ec) throw std::runtime_error("Я не смог создать папку «" + путь + "»!");
+    }
+    KL_EXPORT(создать_папку)
+
+    // функции со списками регистрируем вручную
+    [[maybe_unused]] static const bool kl_reg_lines = NativeLibs::add(KL_LIB, "прочитать_строки", 1,
+        [](NativeArgs& a) -> std::unique_ptr<Value> {
+            return to_list(split_lines(read_all(native::from_value<std::string>(*a[0], "прочитать_строки", 0))));
+        });
+
+    [[maybe_unused]] static const bool kl_reg_write_lines = NativeLibs::add(KL_LIB, "записать_строки", 2,
+        [](NativeArgs& a) -> std::unique_ptr<Value> {
+            std::string path = native::from_value<std::string>(*a[0], "записать_строки", 0);
+            auto* l = dynamic_cast<ListValue*>(a[1].get());
+            if (!l)
+                throw std::runtime_error("Рецепт «записать_строки» ждёт «список» в аргументе номер 2, а ты дал «"
+                    + type_name(a[1].get()) + "»!");
+            std::string text;
+            for (const auto& it : l->data()) text += it->as_string() + "\n";
+            write_all(path, text);
+            return std::make_unique<NothingValue>();
+        });
+
+    [[maybe_unused]] static const bool kl_reg_list_dir = NativeLibs::add(KL_LIB, "список_файлов", 1,
+        [](NativeArgs& a) -> std::unique_ptr<Value> {
+            std::string dir = native::from_value<std::string>(*a[0], "список_файлов", 0);
+            std::error_code ec;
+            if (!fs::is_directory(to_path(dir), ec))
+                throw std::runtime_error("Я не нашёл папку «" + dir + "»!");
+            std::vector<std::string> names;
+            for (const auto& e : fs::directory_iterator(to_path(dir), ec))
+                names.push_back(from_path(e.path().filename()));
+            std::sort(names.begin(), names.end());
+            return to_list(names);
+        });
+
+    // ---------- класс «файл» ----------
+    inline std::string path_of(ObjectValue& o) { return o.data().at("путь").value->as_string(); }
+
+    inline void need_open(ObjectValue& o)
+    {
+        if (!o.data().at("открыт").value->as_bool())
+            throw std::runtime_error("Этот файл уже закрыт! Открой его снова: открыть(\"" + path_of(o) + "\")");
+    }
+
+    inline void need_args(const std::vector<std::unique_ptr<Value>>& a, size_t n, const std::string& name)
+    {
+        if (a.size() != n)
+            throw std::runtime_error("Команде «" + name + "» нужно аргументов: " + std::to_string(n)
+                + ", а ты дал: " + std::to_string(a.size()) + "!");
+    }
+
+    inline ClassInfo make_file_class()
+    {
+        ClassInfo c;
+        c.name = "файл";
+        c.make_hint = "Файл нельзя создать так. Напиши: файл ф = открыть(\"имя.txt\")";
+
+        // поля
+        c.getters["текст"] = [](ObjectValue& o) -> std::unique_ptr<Value> {
+            need_open(o);
+            return std::make_unique<StringValue>(read_all(path_of(o)));
+        };
+        c.setters["текст"] = [](ObjectValue& o, std::unique_ptr<Value> v) {
+            need_open(o);
+            if (!dynamic_cast<StringValue*>(v.get()))
+                throw std::runtime_error("В «текст» файла можно класть только текст, а ты кладёшь «"
+                    + type_name(v.get()) + "»!");
+            write_all(path_of(o), v->as_string());
+        };
+        c.getters["размер"] = [](ObjectValue& o) -> std::unique_ptr<Value> {
+            need_open(o);
+            std::error_code ec;
+            auto n = fs::file_size(to_path(path_of(o)), ec);
+            if (ec) throw std::runtime_error("Я не смог узнать размер файла. Может, его кто-то удалил?");
+            return std::make_unique<NumberValue>((double)n);
+        };
+        c.getters["путь"] = [](ObjectValue& o) -> std::unique_ptr<Value> {
+            return std::make_unique<StringValue>(from_path(fs::absolute(path_of(o))));
+        };
+        c.getters["имя"] = [](ObjectValue& o) -> std::unique_ptr<Value> {
+            return std::make_unique<StringValue>(from_path(to_path(path_of(o)).filename()));
+        };
+        c.getters["открыт"] = [](ObjectValue& o) -> std::unique_ptr<Value> {
+            return std::make_unique<BoolValue>(o.data().at("открыт").value->as_bool());
+        };
+
+        for (const char* n : {"путь", "размер", "имя", "открыт"})
+            c.setters[n] = [n](ObjectValue&, std::unique_ptr<Value>) {
+                throw std::runtime_error(std::string("Поле «") + n + "» нельзя менять, его можно только смотреть!");
+            };
+
+        // команды
+        c.native_methods["закрыть"] = [](ObjectValue& o, std::vector<std::unique_ptr<Value>>& a) -> std::unique_ptr<Value> {
+            need_args(a, 0, "закрыть");
+            o.data().at("открыт").value = std::make_unique<BoolValue>(false);
+            return std::make_unique<NothingValue>();
+        };
+        c.native_methods["дописать"] = [](ObjectValue& o, std::vector<std::unique_ptr<Value>>& a) -> std::unique_ptr<Value> {
+            need_args(a, 1, "дописать");
+            need_open(o);
+            write_all(path_of(o), a[0]->as_string(), true);
+            return std::make_unique<NothingValue>();
+        };
+        c.native_methods["очистить"] = [](ObjectValue& o, std::vector<std::unique_ptr<Value>>& a) -> std::unique_ptr<Value> {
+            need_args(a, 0, "очистить");
+            need_open(o);
+            write_all(path_of(o), "");
+            return std::make_unique<NothingValue>();
+        };
+        c.native_methods["строки"] = [](ObjectValue& o, std::vector<std::unique_ptr<Value>>& a) -> std::unique_ptr<Value> {
+            need_args(a, 0, "строки");
+            need_open(o);
+            return to_list(split_lines(read_all(path_of(o))));
+        };
+
+        return c;
+    }
+
+    [[maybe_unused]] static const bool kl_reg_file_class = NativeLibs::add_class(KL_LIB, make_file_class());
+
+    // открыть(путь): если файла нет, он будет создан пустым
+    [[maybe_unused]] static const bool kl_reg_open = NativeLibs::add(KL_LIB, "открыть", 1,
+        [](NativeArgs& a) -> std::unique_ptr<Value> {
+            std::string path = native::from_value<std::string>(*a[0], "открыть", 0);
+            std::error_code ec;
+            auto p = to_path(path);
+
+            if (fs::is_directory(p, ec))
+                throw std::runtime_error("«" + path + "» это папка, а не файл!");
+            if (!fs::exists(p, ec))
+            {
+                std::ofstream create(p, std::ios::binary);
+                if (!create)
+                    throw std::runtime_error("Я не смог создать файл «" + path + "». Может, такой папки нет?");
+            }
+
+            auto obj = std::make_unique<ObjectValue>("файл");
+            obj->data()["путь"]   = {"текст",   std::make_unique<StringValue>(path)};
+            obj->data()["открыт"] = {"условие", std::make_unique<BoolValue>(true)};
+            return obj;
+        });
+}

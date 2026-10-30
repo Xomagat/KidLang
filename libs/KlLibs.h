@@ -12,4 +12,8 @@
 #include "kl/math"
 #undef KL_LIB
 
+#define KL_LIB "файлы"
+#include "kl/files"
+#undef KL_LIB
+
 #endif // KID_KLLIBS_H

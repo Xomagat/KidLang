@@ -99,8 +99,11 @@ std::unique_ptr<Statement> Parser::statement()
         }
         case token_type::IMPORT: {
             consume(token_type::IMPORT);
-            return std::make_unique<ImportStatement>(
-                consume(token_type::WORDS, "после «подключи» нужно имя библиотеки, например: подключи math").get_text());
+            std::string lib = consume(token_type::WORDS,
+                "после «используй» нужно имя библиотеки, например: используй математика").get_text();
+            for (const auto& cls : NativeLibs::class_names(lib))
+                known_classes.insert(cls);
+            return std::make_unique<ImportStatement>(lib);
         }
 
         case token_type::LIST:
@@ -616,7 +619,7 @@ std::unique_ptr<Expression> Parser::postfix()
     {
         if (match(token_type::DOT))
         {
-            std::string name = consume(token_type::WORDS).get_text();
+            std::string name = member_name();
             if (match(token_type::LPARENT))
             {
                 auto call = std::make_unique<MethodExpression>(std::move(expr), name);
@@ -818,4 +821,15 @@ FuncParts Parser::function_parts()
 
     p.body = block();
     return p;
+}
+
+std::string Parser::member_name()
+{
+    Token t = get(0);
+    bool is_word = t.get_type() == token_type::WORDS
+        || (!t.get_text().empty() && t.get_type() != token_type::NUMBER && t.get_type() != token_type::TEXT);
+    if (!is_word)
+        throw std::runtime_error(at() + "после точки нужно имя поля или команды!");
+    pos++;
+    return t.get_text();
 }

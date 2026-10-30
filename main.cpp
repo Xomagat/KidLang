@@ -108,6 +108,10 @@ int main(int argc, char* argv[])
 
     try
     {
+        std::error_code ec;
+        auto script_dir = std::filesystem::absolute(argv[1], ec).parent_path();
+        if (!ec) std::filesystem::current_path(script_dir, ec);
+
         auto tokens = Lexer(source).tokenize();
         std::vector<std::unique_ptr<Statement>> program = Parser(tokens).parse();
 
