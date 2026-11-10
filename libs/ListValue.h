@@ -108,8 +108,17 @@ public:
     }
     std::unique_ptr<Value> clone() const override
     {
-        return std::make_unique<DictValue>(items, key_t, val_t);
+        auto new_items = std::make_shared<Items>();
+
+        for (const auto& pair : *items) {
+            auto key_clone = pair.first ? pair.first->clone() : nullptr;
+            auto val_clone = pair.second ? pair.second->clone() : nullptr;
+            new_items->emplace_back(std::move(key_clone), std::move(val_clone));
+        }
+
+        return std::make_unique<DictValue>(std::move(new_items), key_t, val_t);
     }
+
 };
 
 class ListValue : public Value
@@ -156,8 +165,19 @@ public:
     }
     std::unique_ptr<Value> clone() const override
     {
-        return std::make_unique<ListValue>(items, elem);
+        auto new_items = std::make_shared<Items>();
+
+        for (const auto& item : *items) {
+            if (item) {
+                new_items->push_back(item->clone());
+            } else {
+                new_items->push_back(nullptr);
+            }
+        }
+
+        return std::make_unique<ListValue>(std::move(new_items), elem);
     }
+
 };
 
 inline std::string type_name(const Value* v)
