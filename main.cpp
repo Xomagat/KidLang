@@ -18,7 +18,7 @@
 #include <windows.h>
 #endif
 
-#define VERSION "0.1"
+#define VERSION "0.2"
 
 void error_print(const std::string& name, const std::string& message,
                  int line = 0, const std::string& source = "", int column = 0)
